@@ -27,12 +27,12 @@ export default function CryptoSelector({ onSelect, onBack }: CryptoSelectorProps
             <p className="text-gray-400">Choose which blockchain to send payment on</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {(['ethereum', 'solana', 'bitcoin'] as Blockchain[]).map((chain) => (
               <button
                 key={chain}
                 onClick={() => onSelect(chain)}
-                className="py-6 px-4 bg-gradient-to-br from-slate-700/50 to-slate-800/50 hover:from-slate-700 hover:to-slate-800 rounded-xl font-semibold transition-all duration-300 hover:scale-105 border border-slate-600/50"
+                className="py-6 px-4 bg-gradient-to-br from-slate-700/50 to-slate-800/50 hover:from-slate-700 hover:to-slate-800 rounded-xl font-semibold transition-all duration-300 hover:scale-105 border border-slate-600/50 min-h-[120px] flex flex-col items-center justify-center"
               >
                 <div className="text-2xl font-bold capitalize mb-1">{chain}</div>
                 <div className="text-sm text-gray-400">
