@@ -17,6 +17,7 @@ export default defineConfig({
   ],
   optimizeDeps: {
     exclude: ['lucide-react'],
+    include: ['@walletconnect/ethereum-provider'],
   },
   define: {
     'process.env': {},

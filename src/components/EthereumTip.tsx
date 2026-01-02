@@ -19,7 +19,7 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
 
   // Ethereum wallet hooks
   const { address: ethAddress, isConnected: isEthConnected, chain } = useAccount();
-  const { connectors, connect: connectEth } = useConnect();
+  const { connectors, connect: connectEth, error: connectError, isPending: isConnecting } = useConnect();
   const { disconnect: disconnectEth } = useDisconnect();
   
   const expectedChain = sepolia;
@@ -426,7 +426,13 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
   };
 
   const handleConnectWallet = (connector: typeof connectors[0]) => {
-    connectEth({ connector });
+    console.log('Connecting wallet:', connector.name, 'Ready:', connector.ready, 'Type:', connector.type);
+    try {
+      connectEth({ connector });
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+      setError(`Failed to connect wallet: ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   const quickAmounts = ['0.001', '0.01', '0.1', '1', '10'];
@@ -617,16 +623,22 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                           return (
                             <button
                               key={connector.uid}
-                              onClick={() => handleConnectWallet(connector)}
+                              onClick={() => {
+                                console.log('Button clicked for:', connector.name);
+                                handleConnectWallet(connector);
+                              }}
+                              disabled={isConnecting}
                               className={`group w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 ${
-                                connector.ready
+                                connector.ready && !isConnecting
                                   ? 'bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:from-blue-600 hover:via-cyan-600 hover:to-blue-700 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/50 text-white'
                                   : 'bg-slate-700/50 hover:bg-slate-700 text-gray-400 hover:text-gray-300'
-                              }`}
+                              } disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
                               <span className="text-2xl">{walletIcon}</span>
                               <span>{walletName}</span>
-                              {!connector.ready ? (
+                              {isConnecting ? (
+                                <span className="text-xs opacity-90">⏳ Connecting...</span>
+                              ) : !connector.ready ? (
                                 <span className="text-xs opacity-75">(Install extension)</span>
                               ) : connectorName.includes('walletconnect') ? (
                                 <span className="text-xs opacity-90">📱 Scan QR code</span>
@@ -704,6 +716,17 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                         {isSwitchingNetwork ? 'Switching...' : `Switch to ${expectedChain.name}`}
                       </button>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Connection error messages */}
+              {connectError && (
+                <div className="flex items-start gap-2 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium mb-1">Connection Error</p>
+                    <p className="text-sm">{connectError.message || String(connectError)}</p>
                   </div>
                 </div>
               )}
