@@ -78,6 +78,8 @@ export const config = createConfig({
     // CURRENT: Testnet transports (free test networks)
     // FOR PRODUCTION: Replace with mainnet chain IDs
     [sepolia.id]: http(),
+    // use default RPC for polygon amoy (not custom endpoint) to reduce conflicts
+    // when using injected connector, wagmi should prefer MetaMask's provider anyway
     [polygonAmoy.id]: http(),
     [baseSepolia.id]: http(),
     [arbitrumSepolia.id]: http(),

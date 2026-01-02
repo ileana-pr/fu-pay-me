@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAccount, useConnect, useDisconnect, useSwitchChain, useSendTransaction, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
-import { sepolia, polygonAmoy } from 'wagmi/chains';
+import { useAccount, useConnect, useDisconnect, useSendTransaction, useWaitForTransactionReceipt, useWriteContract, useBalance } from 'wagmi';
+import { sepolia } from 'wagmi/chains';
 import { parseEther, parseUnits, erc20Abi, Address } from 'viem';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from '@solana/web3.js';
@@ -9,7 +9,7 @@ import { ArrowLeft, Wallet, CheckCircle2, Loader2, AlertCircle } from 'lucide-re
 import { POPULAR_TOKENS, TokenConfig } from '../lib/popularTokens';
 import QRCode from 'qrcode';
 
-type Blockchain = 'ethereum' | 'polygon' | 'solana' | 'bitcoin';
+type Blockchain = 'ethereum' | 'solana' | 'bitcoin';
 
 interface UniversalCryptoTipProps {
   onBack: () => void;
@@ -22,29 +22,90 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [btcQrCode, setBtcQrCode] = useState('');
+  const [isDirectSending, setIsDirectSending] = useState(false);
 
   // get receiving addresses from env
   const receivingAddresses = useMemo(() => ({
     ethereum: import.meta.env.VITE_ETH_ADDRESS || '',
-    polygon: import.meta.env.VITE_ETH_ADDRESS || '', // same address for polygon
     solana: import.meta.env.VITE_SOL_ADDRESS || '',
     bitcoin: import.meta.env.VITE_BTC_ADDRESS || '',
   }), []);
 
   // ethereum wallet hooks
-  const { address: ethAddress, isConnected: isEthConnected, chain, chainId } = useAccount();
+  const { address: ethAddress, isConnected: isEthConnected, chain } = useAccount();
   const { connectors, connect: connectEth } = useConnect();
   const { disconnect: disconnectEth } = useDisconnect();
-  const { switchChain } = useSwitchChain();
   
   // map blockchain selection to expected chain
   const expectedChain = useMemo(() => {
     if (selectedBlockchain === 'ethereum') return sepolia;
-    if (selectedBlockchain === 'polygon') return polygonAmoy;
     return null;
   }, [selectedBlockchain]);
-  const { data: ethHash, sendTransaction: sendEthTransaction, isPending: isEthSending, error: ethSendError, reset: resetEthTransaction } = useSendTransaction();
-  const { isLoading: isEthConfirming, isSuccess: isEthSuccess } = useWaitForTransactionReceipt({ hash: ethHash });
+  
+  // get actual chain ID from wallet provider (most reliable method)
+  const [actualChainId, setActualChainId] = useState<number | null>(null);
+  const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
+  const [lastNetworkSwitchTime, setLastNetworkSwitchTime] = useState<number | null>(null);
+  
+  // sync with wagmi's chain.id when it updates (primary source)
+  useEffect(() => {
+    if (isEthConnected && chain?.id) {
+      setActualChainId(chain.id);
+      console.log('Wagmi chain.id updated:', chain.id, 'Expected:', expectedChain?.id);
+    } else if (!isEthConnected) {
+      setActualChainId(null);
+    }
+  }, [isEthConnected, chain?.id, expectedChain?.id]);
+
+  // listen to direct wallet chain change events (fires immediately when user switches)
+  useEffect(() => {
+    if (!isEthConnected || !window.ethereum) {
+      return;
+    }
+
+    // listen for chain changes - MetaMask sends hex string
+    // this fires immediately when user switches networks in wallet
+    const handleChainChanged = (chainId: string | number) => {
+      console.log('Chain changed event received (raw):', chainId);
+      // handle both hex string (0x...) and number formats
+      let chainIdNum: number;
+      if (typeof chainId === 'string') {
+        // if it's a hex string, parse it
+        if (chainId.startsWith('0x') || chainId.startsWith('0X')) {
+          chainIdNum = parseInt(chainId, 16);
+        } else {
+          // if it's already a decimal string, parse as decimal
+          chainIdNum = parseInt(chainId, 10);
+        }
+      } else {
+        // if it's already a number, use it directly
+        chainIdNum = chainId;
+      }
+      // always update immediately when event fires (don't wait for wagmi)
+      console.log('Chain changed to (parsed):', chainIdNum);
+      setActualChainId(chainIdNum);
+      // clear any errors when chain changes
+      setError(null);
+    };
+    
+    // only listen to chainChanged (networkChanged is deprecated)
+    window.ethereum.on('chainChanged', handleChainChanged);
+    
+    return () => {
+      window.ethereum?.removeListener('chainChanged', handleChainChanged);
+    };
+  }, [isEthConnected]);
+  
+  const { data: balance } = useBalance({ 
+    address: ethAddress,
+    chainId: expectedChain?.id,
+  });
+  const { data: ethHash, isPending: isEthSending, error: ethSendError, reset: resetEthTransaction } = useSendTransaction();
+  // manual hash state for direct MetaMask sends
+  const [manualEthHash, setManualEthHash] = useState<`0x${string}` | null>(null);
+  // use manual hash if available, otherwise use wagmi's hash
+  const effectiveEthHash = manualEthHash || ethHash;
+  const { isLoading: isEthConfirming, isSuccess: isEthSuccess } = useWaitForTransactionReceipt({ hash: effectiveEthHash });
   const { writeContract, data: contractHash, isPending: isContractSending, error: contractError, reset: resetContract } = useWriteContract();
   const { isLoading: isContractConfirming, isSuccess: isContractSuccess } = useWaitForTransactionReceipt({ hash: contractHash });
 
@@ -55,7 +116,7 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
   const [solHash, setSolHash] = useState<string | null>(null);
   const [isSolSuccess, setIsSolSuccess] = useState(false);
 
-  const isEVM = selectedBlockchain === 'ethereum' || selectedBlockchain === 'polygon';
+  const isEVM = selectedBlockchain === 'ethereum';
   const isSol = selectedBlockchain === 'solana';
   const isBtc = selectedBlockchain === 'bitcoin';
   const isConnected = isEVM ? isEthConnected : isSolConnected;
@@ -69,52 +130,90 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
     return 'Unknown';
   }, []);
   
-  // format network name for display
+  // format network name for display - use actual chain ID to determine network
+  // actualChainId is set via useEffect from wallet provider (most reliable)
   const currentNetwork = useMemo(() => {
-    if (isEVM && chain) {
-      const name = chain.name || 'Unknown';
-      // check if it's a testnet (common testnet indicators)
-      const isTestnet = name.toLowerCase().includes('testnet') || 
-                       name.toLowerCase().includes('sepolia') || 
-                       name.toLowerCase().includes('amoy') ||
-                       name.toLowerCase().includes('fuji');
-      return `${name}${isTestnet ? ' (Testnet)' : ' (Mainnet)'}`;
+    if (isEVM && actualChainId) {
+      // map chain IDs to network names
+      // sepolia = 11155111, ethereum mainnet = 1
+      let networkName = 'Unknown Network';
+      if (actualChainId === 11155111) networkName = 'Sepolia (Testnet)';
+      else if (actualChainId === 1) networkName = 'Ethereum (Mainnet)';
+      else {
+        // fallback to chain name if available
+        networkName = chain?.name || `Chain ${actualChainId}`;
+        const isTestnet = networkName.toLowerCase().includes('testnet') || 
+                         networkName.toLowerCase().includes('sepolia') ||
+                         networkName.toLowerCase().includes('fuji');
+        networkName = `${networkName}${isTestnet ? ' (Testnet)' : ' (Mainnet)'}`;
+      }
+      return networkName;
     }
     if (isSol) {
       return `Solana ${solanaNetwork}`;
     }
     return null;
-  }, [isEVM, isSol, chain, solanaNetwork]);
+  }, [isEVM, isSol, actualChainId, chain, solanaNetwork]);
   
   // check if wallet network matches expected network
   const networkMismatch = useMemo(() => {
     if (!isEVM || !isConnected || !expectedChain) return false;
     
-    // if chain is undefined, check chainId directly
-    // mainnet chainId is 1, sepolia is 11155111
-    if (!chain && chainId) {
-      // if we have a chainId but no chain object, it's likely an unsupported network
-      // mainnet = 1, sepolia = 11155111, polygon amoy = 80002
-      const isSepolia = chainId === 11155111;
-      const isPolygonAmoy = chainId === 80002;
-      
-      if (selectedBlockchain === 'ethereum' && !isSepolia) return true;
-      if (selectedBlockchain === 'polygon' && !isPolygonAmoy) return true;
-      return false;
+    // use actualChainId as the source of truth
+    if (!actualChainId) {
+      console.log('Network mismatch check: No actualChainId available');
+      return false; // no chain info available
     }
     
-    if (!chain) return false; // no chain info available
-    return chain.id !== expectedChain.id;
-  }, [isEVM, isConnected, chain, chainId, expectedChain, selectedBlockchain]);
-  const isSending = isEVM ? (isEthSending || isContractSending) : isSolSending;
+    // check if current chain matches expected chain
+    const isMismatch = actualChainId !== expectedChain.id;
+    console.log('Network mismatch check:', {
+      actualChainId,
+      expectedChainId: expectedChain.id,
+      expectedChainName: expectedChain.name,
+      isMismatch
+    });
+    
+    return isMismatch;
+  }, [isEVM, isConnected, actualChainId, expectedChain]);
+  const isSending = isEVM ? (isEthSending || isContractSending || isDirectSending) : isSolSending;
   const isConfirming = isEVM ? (isEthConfirming || isContractConfirming) : false;
   const isSuccess = isEVM ? (isEthSuccess || isContractSuccess) : isSolSuccess;
-  const hash = isEVM ? (ethHash || contractHash) : solHash;
+  const hash = isEVM ? (effectiveEthHash || contractHash) : solHash;
   const sendError = isEVM ? (ethSendError || contractError) : null;
   
   // format error message for better user experience
   const formattedError = useMemo(() => {
-    if (error) return error;
+    // check both error state and sendError from wagmi hooks
+    if (error) {
+      // if error is a string, use it directly; otherwise format it
+      if (typeof error === 'string') {
+        // check if it's the Internal JSON-RPC error pattern
+        if (error.includes('Internal JSON-RPC error') || error.includes('-32603')) {
+          let errorMsg = 'MetaMask RPC Error (-32603): Internal JSON-RPC error.\n\n';
+          errorMsg += 'This error comes from MetaMask, not the app. Common causes:\n';
+          errorMsg += '• Insufficient balance (need amount + gas fees)\n';
+          errorMsg += '• MetaMask RPC endpoint issues\n';
+          errorMsg += '• Gas estimation failure\n';
+          errorMsg += '• Network configuration problems\n\n';
+          
+          if (balance) {
+            const balanceFormatted = (Number(balance.value) / Math.pow(10, balance.decimals)).toFixed(6);
+            errorMsg += `Your current balance: ${balanceFormatted} ${balance.symbol}\n\n`;
+          }
+          
+          errorMsg += 'Troubleshooting steps:\n';
+          errorMsg += '1. Check MetaMask → Settings → Advanced → Reset Account\n';
+          errorMsg += '2. Verify you\'re on Sepolia Testnet (chain ID: 11155111)\n';
+          errorMsg += '3. Refresh page and reconnect wallet\n';
+          errorMsg += '4. Try a smaller amount (0.0001 instead of 0.001)\n';
+          errorMsg += '5. Check MetaMask network RPC URL is correct';
+          return errorMsg;
+        }
+        return error;
+      }
+    }
+    
     if (!sendError) return null;
     
     const errorMessage = sendError.message || sendError.toString();
@@ -133,7 +232,27 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
           errorMessage.match(/from:\s*0x[\da-fA-F]+/)?.[0] === errorMessage.match(/to:\s*0x[\da-fA-F]+/)?.[0]) {
         return 'Cannot send to yourself. The receiving address matches your wallet address. Please update VITE_ETH_ADDRESS in your .env file with a different address.';
       }
-      return 'Transaction failed. This usually means insufficient balance, network issues, or trying to send to yourself. Please check your wallet balance and receiving address.';
+      // provide more specific error message with balance info
+      let errorMsg = 'MetaMask RPC Error (-32603): Internal JSON-RPC error.\n\n';
+      errorMsg += 'This error comes from MetaMask, not the app. Common causes:\n';
+      errorMsg += '• Insufficient balance (need amount + gas fees)\n';
+      errorMsg += '• MetaMask RPC endpoint issues\n';
+      errorMsg += '• Gas estimation failure\n';
+      errorMsg += '• Network configuration problems\n\n';
+      
+      if (balance) {
+        const balanceFormatted = (Number(balance.value) / Math.pow(10, balance.decimals)).toFixed(6);
+        errorMsg += `Your current balance: ${balanceFormatted} ${balance.symbol}\n\n`;
+      }
+      
+      errorMsg += 'Troubleshooting steps:\n';
+      errorMsg += '1. Check MetaMask → Settings → Advanced → Reset Account\n';
+      errorMsg += '2. Verify you\'re on Polygon Amoy Testnet (chain ID: 80002)\n';
+      errorMsg += '3. Refresh page and reconnect wallet\n';
+      errorMsg += '4. Try a smaller amount (0.0001 instead of 0.001)\n';
+      errorMsg += '5. Check MetaMask network RPC URL is correct';
+      
+      return errorMsg;
     }
     if (errorMessage.includes('network') || errorMessage.includes('Network')) {
       return 'Network error. Please check your connection and try again.';
@@ -144,7 +263,7 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
     
     // return original message if no pattern matches
     return errorMessage;
-  }, [error, sendError]);
+  }, [error, sendError, balance]);
   
   // generate explorer URL for transaction
   const explorerUrl = useMemo(() => {
@@ -174,14 +293,6 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
       // ethereum mainnet
       if (chainId === 1) {
         return `https://etherscan.io/tx/${txHash}`;
-      }
-      // polygon amoy
-      if (chainId === 80002) {
-        return `https://amoy.polygonscan.com/tx/${txHash}`;
-      }
-      // polygon mainnet
-      if (chainId === 137) {
-        return `https://polygonscan.com/tx/${txHash}`;
       }
       // base sepolia
       if (chainId === 84532) {
@@ -273,30 +384,67 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
       }
     }
     
-    // fallback: try to use chainId if chain object not available
-    if (isEVM && chainId && hash) {
+    // fallback: try to use actualChainId if chain object not available
+    if (isEVM && actualChainId && hash) {
       // ethereum sepolia
-      if (chainId === 11155111) {
+      if (actualChainId === 11155111) {
         return `https://sepolia.etherscan.io/tx/${hash}`;
       }
       // ethereum mainnet
-      if (chainId === 1) {
+      if (actualChainId === 1) {
         return `https://etherscan.io/tx/${hash}`;
       }
     }
     
     return null;
-  }, [hash, isSol, isEVM, chain, chainId]);
+  }, [hash, isSol, isEVM, chain, actualChainId]);
   
   // handle transaction errors and reset state
+  // only handle errors from wagmi hooks if we're not doing a direct send
   useEffect(() => {
+    // ignore wagmi errors if we're doing a direct MetaMask send
+    // (direct sends handle their own errors)
+    if (isDirectSending) return;
+    
     if (ethSendError || contractError) {
       const error = ethSendError || contractError;
+      if (!error) return;
+      
       const errorMessage = error?.message || error?.toString() || 'Transaction failed';
+      
+      // log full error details for debugging
+      console.error('Transaction error details:', {
+        error,
+        message: errorMessage,
+        code: 'code' in error ? (error as { code?: number }).code : undefined,
+        cause: 'cause' in error ? (error as { cause?: unknown }).cause : undefined,
+        shortMessage: 'shortMessage' in error ? (error as { shortMessage?: string }).shortMessage : undefined,
+        stack: 'stack' in error ? (error as { stack?: string }).stack : undefined,
+        requestArgs: 'request' in error && typeof (error as { request?: unknown }).request === 'object' 
+          ? (error as { request?: { method?: string; params?: unknown } }).request 
+          : undefined,
+      });
+      
+      // try to extract more details from the error
+      if (error && typeof error === 'object') {
+        const errorObj = error as Record<string, unknown>;
+        if (errorObj.request) {
+          console.error('Failed request details:', errorObj.request);
+        }
+        if (errorObj.cause && typeof errorObj.cause === 'object') {
+          const cause = errorObj.cause as Record<string, unknown>;
+          console.error('Error cause details:', {
+            message: cause.message,
+            code: cause.code,
+            data: cause.data,
+          });
+        }
+      }
       
       // set error message for user (unless it's just a user rejection)
       if (!errorMessage.toLowerCase().includes('user rejected') && 
-          !errorMessage.toLowerCase().includes('rejected the request')) {
+          !errorMessage.toLowerCase().includes('rejected the request') &&
+          !errorMessage.toLowerCase().includes('user denied')) {
         setError(errorMessage);
       }
       
@@ -307,7 +455,7 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [ethSendError, contractError, resetEthTransaction, resetContract]);
+  }, [ethSendError, contractError, resetEthTransaction, resetContract, isDirectSending]);
   
   // timeout for stuck transactions (30 seconds)
   useEffect(() => {
@@ -350,8 +498,8 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
     }
 
     // prevent transaction if network mismatch
+    // don't set error here - the network mismatch warning banner already handles this
     if (networkMismatch) {
-      setError('Network mismatch detected. Please switch to the correct network before sending.');
       return;
     }
 
@@ -381,23 +529,251 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
           return;
         }
 
+        // explicit chain validation before sending
+        if (!expectedChain) {
+          setError('Network configuration error. Please refresh the page.');
+          return;
+        }
+        
+        // don't set error for network mismatch - the yellow warning banner already handles this
+        // just return early to prevent transaction
+        if (!actualChainId || actualChainId !== expectedChain.id) {
+          return;
+        }
+        
+        // verify RPC connection is ready before sending (prevents RPC errors)
+        // this ensures wagmi has had time to sync after network switch
+        if (window.ethereum) {
+          let rpcReady = false;
+          let rpcAttempts = 0;
+          const maxRpcAttempts = 10; // 1 second max wait
+          
+          while (!rpcReady && rpcAttempts < maxRpcAttempts) {
+            try {
+              // verify wallet chain ID matches
+              const walletChainId = await window.ethereum.request({ method: 'eth_chainId' });
+              const walletChainIdNum = typeof walletChainId === 'string' && walletChainId.startsWith('0x') 
+                ? parseInt(walletChainId, 16) 
+                : Number(walletChainId);
+              
+              if (walletChainIdNum === expectedChain.id) {
+                // test RPC connection with a simple call
+                await window.ethereum.request({ method: 'eth_blockNumber' });
+                console.log('RPC connection verified before sending transaction');
+                rpcReady = true;
+              } else {
+                console.warn('Wallet chain ID mismatch, waiting...', { walletChainIdNum, expectedChainId: expectedChain.id });
+              }
+            } catch (rpcError) {
+              console.warn('RPC connection test failed, waiting...', rpcError);
+            }
+            
+            if (!rpcReady) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+              rpcAttempts++;
+            }
+          }
+          
+          if (!rpcReady) {
+            console.warn('RPC verification timeout, but proceeding with transaction...');
+          }
+          
+          // if we recently switched networks (within last 10 seconds), add extra delay
+          // this gives wagmi time to fully update its internal RPC provider
+          if (lastNetworkSwitchTime && (Date.now() - lastNetworkSwitchTime) < 10000) {
+            const timeSinceSwitch = Date.now() - lastNetworkSwitchTime;
+            // wait at least 3 seconds total after network switch before allowing transaction
+            const minWaitTime = 3000;
+            const additionalDelay = Math.max(0, minWaitTime - timeSinceSwitch);
+            if (additionalDelay > 0) {
+              console.log(`Recently switched networks (${Math.round(timeSinceSwitch)}ms ago), waiting ${additionalDelay}ms for wagmi to fully sync RPC provider...`);
+              await new Promise(resolve => setTimeout(resolve, additionalDelay));
+            } else {
+              console.log(`Network switch was ${Math.round(timeSinceSwitch)}ms ago, sufficient time has passed`);
+            }
+          } else {
+            // even if we didn't just switch, add a small delay to ensure RPC is stable
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+
         // check if native token or ERC20
         if (!selectedToken || selectedToken.contractAddress === 'native') {
           // native token transfer (ETH/MATIC)
-          // sendEthTransaction triggers the wallet prompt - errors handled by hook
-          sendEthTransaction({
-            to: recipientAddress as Address,
-            value: parseEther(amount),
+          // verify balance directly from MetaMask before sending
+          if (window.ethereum && ethAddress) {
+            try {
+              const balanceHex = await window.ethereum.request({
+                method: 'eth_getBalance',
+                params: [ethAddress, 'latest'],
+              });
+              const balanceWei = BigInt(balanceHex);
+              const amountWei = parseEther(amount);
+              const minBalanceNeeded = amountWei + BigInt(21000) * BigInt(1000000000); // amount + estimated gas
+              
+              console.log('Balance check:', {
+                balanceWei: balanceWei.toString(),
+                amountWei: amountWei.toString(),
+                minBalanceNeeded: minBalanceNeeded.toString(),
+                hasEnough: balanceWei >= minBalanceNeeded,
+              });
+              
+              if (balanceWei < minBalanceNeeded) {
+                const balanceFormatted = (Number(balanceWei) / 1e18).toFixed(6);
+                setError(`Insufficient balance. You have ${balanceFormatted} MATIC, but need at least ${(Number(minBalanceNeeded) / 1e18).toFixed(6)} MATIC (amount + gas fees).`);
+                return;
+              }
+            } catch (balanceError) {
+              console.warn('Could not check balance directly, proceeding anyway:', balanceError);
+            }
+          }
+          
+          // verify MetaMask's actual chain ID before sending
+          // wagmi's chain.id might be out of sync with MetaMask's actual network
+          let metaMaskChainId: number | null = null;
+          if (window.ethereum) {
+            try {
+              const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+              metaMaskChainId = typeof chainIdHex === 'string' && chainIdHex.startsWith('0x') 
+                ? parseInt(chainIdHex, 16) 
+                : Number(chainIdHex);
+              console.log('MetaMask actual chain ID:', metaMaskChainId, 'Expected:', expectedChain.id);
+            } catch (chainError) {
+              console.error('Failed to get MetaMask chain ID:', chainError);
+            }
+          }
+          
+          // if MetaMask is on wrong network, show error and don't send
+          if (metaMaskChainId !== null && metaMaskChainId !== expectedChain.id) {
+            const chainNames: Record<number, string> = {
+              11155111: 'Sepolia',
+              1: 'Ethereum Mainnet',
+            };
+            const currentNetwork = chainNames[metaMaskChainId] || `Chain ${metaMaskChainId}`;
+            const expectedNetwork = expectedChain.name;
+            setError(`Network mismatch: MetaMask is on ${currentNetwork} (Chain ID: ${metaMaskChainId}), but this app requires ${expectedNetwork} (Chain ID: ${expectedChain.id}). Please switch networks in MetaMask.`);
+            return;
+          }
+          
+          // send transaction directly through MetaMask to bypass wagmi's RPC handling
+          // this avoids any potential formatting issues between wagmi and MetaMask
+          console.log('Sending native token transaction directly via MetaMask:', {
+            to: recipientAddress,
+            value: parseEther(amount).toString(),
+            expectedChainId: expectedChain.id,
+            actualChainId: actualChainId,
+            metaMaskChainId: metaMaskChainId,
+            amount: amount,
           });
+          
+          // test RPC connection before sending transaction
+          if (window.ethereum) {
+            try {
+              // test with a simple call to verify RPC is working
+              await window.ethereum.request({ method: 'eth_blockNumber' });
+              console.log('RPC connection test passed before sending transaction');
+            } catch (rpcTestError) {
+              console.error('RPC connection test failed:', rpcTestError);
+              setError('RPC connection test failed. MetaMask may be having issues with the network. Please try: 1) Refreshing the page, 2) Switching to a different network and back, or 3) Checking MetaMask network settings.');
+              return;
+            }
+          }
+          
+          try {
+            setIsDirectSending(true);
+            
+            // prepare transaction parameters
+            const txParams = {
+              from: ethAddress,
+              to: recipientAddress,
+              value: `0x${parseEther(amount).toString(16)}`,
+              // don't specify gas - let MetaMask estimate
+              // don't specify gasPrice - let MetaMask set it
+            };
+            
+            console.log('Transaction parameters:', txParams);
+            
+            // send directly through MetaMask's provider - bypass wagmi entirely
+            const txHash = await window.ethereum.request({
+              method: 'eth_sendTransaction',
+              params: [txParams],
+            }) as `0x${string}`;
+            
+            console.log('Transaction sent directly via MetaMask, hash:', txHash);
+            // set the hash so wagmi's receipt hook can track it
+            setManualEthHash(txHash);
+            setIsDirectSending(false);
+            // clear any previous errors
+            setError(null);
+          } catch (directError: unknown) {
+            console.error('Direct MetaMask send failed:', directError);
+            setIsDirectSending(false);
+            
+            // extract error details
+            let errorMessage = 'Transaction failed';
+            let errorCode: number | undefined;
+            
+            if (directError instanceof Error) {
+              errorMessage = directError.message;
+            } else if (typeof directError === 'object' && directError !== null) {
+              const errorObj = directError as Record<string, unknown>;
+              if ('message' in errorObj) {
+                errorMessage = String(errorObj.message);
+              }
+              if ('code' in errorObj) {
+                errorCode = Number(errorObj.code);
+              }
+              // check for nested error details
+              if ('data' in errorObj && typeof errorObj.data === 'object' && errorObj.data !== null) {
+                const data = errorObj.data as Record<string, unknown>;
+                if ('message' in data) {
+                  errorMessage = String(data.message);
+                }
+              }
+            } else {
+              errorMessage = String(directError);
+            }
+            
+            console.error('Full error details:', {
+              error: directError,
+              message: errorMessage,
+              code: errorCode,
+            });
+            
+            // check if user rejected the transaction
+            const isUserRejection = 
+              errorMessage.toLowerCase().includes('user rejected') ||
+              errorMessage.toLowerCase().includes('rejected the request') ||
+              errorMessage.toLowerCase().includes('user denied') ||
+              errorMessage.toLowerCase().includes('4001') ||
+              errorCode === 4001;
+            
+            // only set error if it's not a user rejection
+            // user rejections are normal and shouldn't show an error
+            if (!isUserRejection) {
+              // for RPC errors, provide helpful troubleshooting info
+              if (errorCode === -32603 || errorMessage.includes('Internal JSON-RPC error')) {
+                setError(`MetaMask RPC Error: ${errorMessage}\n\nThis usually means MetaMask's RPC endpoint is having issues. Try:\n1. Refreshing the page\n2. Switching networks in MetaMask and switching back\n3. Checking MetaMask → Settings → Networks → Sepolia → RPC URL\n4. Resetting MetaMask account (Settings → Advanced → Reset Account)`);
+              } else {
+                setError(errorMessage);
+              }
+            } else {
+              // clear any previous errors on user rejection
+              setError(null);
+            }
+          }
         } else {
           // ERC20 token transfer
           const amountInWei = parseUnits(amount, selectedToken.decimals);
           // writeContract triggers the wallet prompt - errors handled by hook
+          // don't specify chainId - let wagmi use MetaMask's current chain/provider
+          // this ensures wagmi uses MetaMask's RPC instead of the HTTP transport
           writeContract({
             address: selectedToken.contractAddress as Address,
             abi: erc20Abi,
             functionName: 'transfer',
             args: [recipientAddress as Address, amountInWei],
+            // chainId removed - wagmi will use the current chain from MetaMask
           });
         }
       } else if (isSol) {
@@ -463,7 +839,7 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
       setError(errorMessage);
       setIsSolSending(false);
     }
-  }, [amount, selectedBlockchain, selectedToken, networkMismatch, isEVM, isSol, ethAddress, solAddress, sendEthTransaction, writeContract, wallet, connection, receivingAddresses]);
+  }, [amount, selectedBlockchain, selectedToken, networkMismatch, isEVM, isSol, ethAddress, solAddress, writeContract, wallet, connection, receivingAddresses, expectedChain, actualChainId, lastNetworkSwitchTime]);
 
   // auto-send transaction when wallet connects
   useEffect(() => {
@@ -526,14 +902,148 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
   
   // switch to correct network
   const handleSwitchNetwork = useCallback(async () => {
-    if (!expectedChain || !switchChain) return;
+    if (!expectedChain || !window.ethereum) return;
+    setIsSwitchingNetwork(true);
+    setError(null); // clear any previous errors
+    
     try {
-      await switchChain({ chainId: expectedChain.id });
+      const chainIdHex = `0x${expectedChain.id.toString(16)}`;
+      console.log('Switching to chain:', expectedChain.id, expectedChain.name, 'hex:', chainIdHex);
+      
+      // use MetaMask's direct API to switch - this will prompt user for approval
+      // the await here waits for user to approve/reject the switch
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: chainIdHex }],
+        });
+        console.log('Network switch approved by user, waiting for switch to complete...');
+        // wait a moment after user approval to let MetaMask complete the switch
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (switchError: unknown) {
+        // if network is not added, error code 4902 means we need to add it
+        const error = switchError as { code?: number; message?: string };
+        if (error.code === 4902) {
+          console.log('Network not found, attempting to add it...');
+          // network not added, try to add it (this also prompts user for approval)
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: chainIdHex,
+              chainName: expectedChain.name,
+              nativeCurrency: {
+                name: expectedChain.nativeCurrency.name,
+                symbol: expectedChain.nativeCurrency.symbol,
+                decimals: expectedChain.nativeCurrency.decimals,
+              },
+              rpcUrls: expectedChain.rpcUrls.default.http,
+              blockExplorerUrls: expectedChain.blockExplorers?.default?.url ? [expectedChain.blockExplorers.default.url] : undefined,
+            }],
+          });
+          console.log('Network added and approved by user, waiting for switch to complete...');
+          // wait a moment after user approval to let MetaMask complete the switch
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } else {
+          // other error (user rejected, etc.)
+          throw switchError;
+        }
+      }
+      
+      // wait for the chain to actually switch by polling the chain ID
+      // this ensures the switch completes before the UI updates
+      let attempts = 0;
+      const maxAttempts = 50; // 5 seconds max wait (increased for slower switches)
+      const checkChain = async (): Promise<boolean> => {
+        if (!window.ethereum) {
+          setIsSwitchingNetwork(false);
+          return false;
+        }
+        try {
+          const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+          const chainIdNum = typeof chainId === 'string' && chainId.startsWith('0x') 
+            ? parseInt(chainId, 16) 
+            : Number(chainId);
+          
+          console.log('Checking chain switch - attempt:', attempts + 1, 'current:', chainIdNum, 'expected:', expectedChain.id);
+          
+          if (chainIdNum === expectedChain.id) {
+            console.log('Chain switch confirmed! Waiting for network to be ready...');
+            
+            // wait longer to ensure the network is fully ready (RPC connection established)
+            // increased from 500ms to 1500ms to give wagmi time to sync
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // verify one more time that we're still on the correct chain
+            const finalCheck = await window.ethereum.request({ method: 'eth_chainId' });
+            const finalChainIdNum = typeof finalCheck === 'string' && finalCheck.startsWith('0x') 
+              ? parseInt(finalCheck, 16) 
+              : Number(finalCheck);
+            
+            if (finalChainIdNum === expectedChain.id) {
+              // test RPC connection by making a simple call
+              try {
+                await window.ethereum.request({ method: 'eth_blockNumber' });
+                console.log('RPC connection verified');
+              } catch (rpcError) {
+                console.warn('RPC connection test failed, but continuing:', rpcError);
+              }
+              
+              // wait longer for wagmi to sync (it updates reactively via useAccount hook)
+              // we can't check chain.id directly here because it's reactive and the closure would be stale
+              // instead, we wait a reasonable amount of time for wagmi to catch up and update its RPC provider
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              console.log('Network switch complete!');
+              setActualChainId(finalChainIdNum);
+              setError(null);
+              setIsSwitchingNetwork(false);
+              // track when network switch completed (for extra delay on next transaction)
+              setLastNetworkSwitchTime(Date.now());
+              return true;
+            }
+          }
+          
+          attempts++;
+          if (attempts < maxAttempts) {
+            setTimeout(() => checkChain(), 100); // check every 100ms
+          } else {
+            console.warn('Chain switch timeout - chain may not have switched');
+            // still update actualChainId with what we got
+            setActualChainId(chainIdNum);
+            setIsSwitchingNetwork(false);
+            setError('Network switch may not have completed. Please verify you are on the correct network and try again.');
+            return false;
+          }
+        } catch (err) {
+          console.error('Error checking chain:', err);
+          attempts++;
+          if (attempts < maxAttempts) {
+            // retry on error (network might still be switching)
+            setTimeout(() => checkChain(), 100);
+          } else {
+            setIsSwitchingNetwork(false);
+            setError('Error verifying network switch. Please check your wallet.');
+            return false;
+          }
+        }
+        return false;
+      };
+      
+      // start checking after a short delay to allow the switch to initiate
+      setTimeout(() => checkChain(), 200);
     } catch (error) {
       console.error('Error switching network:', error);
-      setError('Failed to switch network. Please switch manually in your wallet.');
+      setIsSwitchingNetwork(false);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // check if user rejected the switch
+      if (errorMessage.toLowerCase().includes('rejected') || errorMessage.toLowerCase().includes('user denied')) {
+        setError('Network switch was cancelled. Please switch manually in your wallet.');
+      } else {
+        setError(`Failed to switch network: ${errorMessage}. Please switch manually in your wallet.`);
+      }
     }
-  }, [expectedChain, switchChain]);
+  }, [expectedChain]);
 
   const quickAmounts = ['0.01', '0.05', '0.1', '0.5', '1'];
 
@@ -560,7 +1070,7 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {(['ethereum', 'polygon', 'solana', 'bitcoin'] as Blockchain[]).map((chain) => (
+              {(['ethereum', 'solana', 'bitcoin'] as Blockchain[]).map((chain) => (
                 <button
                   key={chain}
                   onClick={() => setSelectedBlockchain(chain)}
@@ -568,7 +1078,7 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
                 >
                   <div className="text-2xl font-bold capitalize mb-1">{chain}</div>
                   <div className="text-sm text-gray-400">
-                    {chain === 'bitcoin' ? 'BTC' : chain === 'ethereum' ? 'ETH & ERC20' : chain === 'polygon' ? 'MATIC & ERC20' : 'SOL & SPL'}
+                    {chain === 'bitcoin' ? 'BTC' : chain === 'ethereum' ? 'ETH & ERC20' : 'SOL & SPL'}
                   </div>
                 </button>
               ))}
@@ -866,7 +1376,7 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-yellow-400 mb-1">Network Mismatch Detected</p>
                       <p className="text-sm text-yellow-300/80 mb-2">
-                        Your wallet is on <strong>{chain?.name || 'an unsupported network'}</strong>, but this app expects <strong>{expectedChain.name}</strong>.
+                        Your wallet is on <strong>{currentNetwork || `Chain ${actualChainId || 'Unknown'}`}</strong> (Chain ID: {actualChainId || 'Unknown'}), but this app expects <strong>{expectedChain.name}</strong> (Chain ID: {expectedChain.id}).
                       </p>
                       <p className="text-xs text-yellow-300/60 mb-3">
                         Transactions may fail or send to the wrong network. Please switch to the correct network.
@@ -874,9 +1384,10 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
                       {chain && (
                         <button
                           onClick={handleSwitchNetwork}
-                          className="w-full py-2 px-4 bg-yellow-500 hover:bg-yellow-600 text-yellow-900 font-semibold rounded-lg transition-colors"
+                          disabled={isSwitchingNetwork}
+                          className="w-full py-2 px-4 bg-yellow-500 hover:bg-yellow-600 text-yellow-900 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Switch to {expectedChain.name}
+                          {isSwitchingNetwork ? 'Switching...' : `Switch to ${expectedChain.name}`}
                         </button>
                       )}
                       {!chain && (
@@ -890,28 +1401,55 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
               )}
 
               {/* error messages */}
-              {formattedError && (
-                <div className="flex items-start gap-2 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium mb-1">Transaction Error</p>
-                    <p className="text-sm">
-                      {formattedError}
-                    </p>
-                    {formattedError.includes('Insufficient balance') && (
-                      <p className="text-xs text-red-300/80 mt-2">
-                        Tip: Make sure you have enough {selectedToken?.symbol || 'tokens'} to cover the amount plus gas fees.
+              {/* don't show error if network mismatch warning is already showing */}
+              {formattedError && !networkMismatch && (
+                  <div className="flex items-start gap-2 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium mb-1">Transaction Error</p>
+                      <p className="text-sm whitespace-pre-line">
+                        {formattedError}
                       </p>
-                    )}
+                      {formattedError.includes('Insufficient balance') && (
+                        <p className="text-xs text-red-300/80 mt-2">
+                          Tip: Make sure you have enough {selectedToken?.symbol || 'tokens'} to cover the amount plus gas fees.
+                        </p>
+                      )}
+                      {(formattedError.includes('Internal JSON-RPC error') || formattedError.includes('-32603')) && isConnected && (
+                        <button
+                          onClick={async () => {
+                            setError(null);
+                            // disconnect and reconnect wallet
+                            if (isEVM) {
+                              disconnectEth();
+                              // wait a moment then reconnect
+                              setTimeout(() => {
+                                const connector = connectors.find(c => c.ready);
+                                if (connector) {
+                                  connectEth({ connector });
+                                }
+                              }, 500);
+                            } else if (isSol) {
+                              disconnectSol();
+                              setTimeout(() => {
+                                connectSol();
+                              }, 500);
+                            }
+                          }}
+                          className="mt-3 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg transition-colors"
+                        >
+                          Reconnect Wallet
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* send button */}
               {selectedToken && !showWalletSelector && (
                 <button
                   onClick={handleTipClick}
-                  disabled={!amount || isSending || isConfirming || networkMismatch}
+                  disabled={!amount || isSending || isConfirming || networkMismatch || isSwitchingNetwork}
                   className="w-full py-4 px-6 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 rounded-xl font-semibold text-lg transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                 >
                   {isSending || isConfirming ? (
@@ -956,6 +1494,7 @@ export default function UniversalCryptoTip({ onBack }: UniversalCryptoTipProps) 
                   setError(null);
                   setSolHash(null);
                   setIsSolSuccess(false);
+                  setManualEthHash(null); // reset manual hash
                   if (isEVM) {
                     disconnectEth();
                   } else {
