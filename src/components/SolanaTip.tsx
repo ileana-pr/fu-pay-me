@@ -283,35 +283,65 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
                   </div>
                   {wallets.length > 0 ? (
                     <div className="space-y-3">
-                      {wallets.map((wallet) => {
-                        const readyState = wallet.adapter.readyState;
-                        const canConnect = readyState === 'Installed' || readyState === 'Loadable';
-                        const walletIcon = wallet.adapter.name.toLowerCase().includes('phantom') ? '👻' : 
-                                         wallet.adapter.name.toLowerCase().includes('solflare') ? '🔥' : '💜';
-                        const statusEmoji = canConnect ? '✨' : '⏳';
+                      {(() => {
+                        // Filter out Ethereum wallets (MetaMask, etc.) and deduplicate
+                        const seenWallets = new Set<string>();
+                        const solanaWallets = wallets.filter((wallet) => {
+                          const walletName = wallet.adapter.name.toLowerCase();
+                          
+                          // Exclude Ethereum wallets - they don't work for Solana
+                          if (walletName.includes('metamask') || walletName.includes('ethereum') || 
+                              walletName.includes('walletconnect') || walletName.includes('injected')) {
+                            return false;
+                          }
+                          
+                          // Deduplicate
+                          if (seenWallets.has(walletName)) {
+                            return false;
+                          }
+                          seenWallets.add(walletName);
+                          return true;
+                        });
                         
-                        return (
-                          <button
-                            key={wallet.adapter.name}
-                            onClick={() => handleConnectWallet(wallet.adapter.name)}
-                            className={`group w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 ${
-                              canConnect
-                                ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 hover:from-purple-600 hover:via-pink-600 hover:to-purple-700 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/50 text-white'
-                                : 'bg-slate-700/50 hover:bg-slate-700 text-gray-400 hover:text-gray-300'
-                            }`}
-                          >
-                            <span className="text-2xl">{walletIcon}</span>
-                            <span>{wallet.adapter.name}</span>
-                            {canConnect ? (
-                              <span className="text-xs opacity-90">{statusEmoji} Ready!</span>
-                            ) : (
-                              <span className="text-xs opacity-75">({readyState})</span>
-                            )}
-                          </button>
-                        );
-                      })}
+                        return solanaWallets.map((wallet) => {
+                          const readyState = wallet.adapter.readyState;
+                          const canConnect = readyState === 'Installed' || readyState === 'Loadable';
+                          const walletName = wallet.adapter.name.toLowerCase();
+                          const walletIcon = walletName.includes('phantom') ? '👻' : 
+                                           walletName.includes('solflare') ? '🔥' : '💜';
+                          const statusEmoji = canConnect ? '✨' : '⏳';
+                          
+                          return (
+                            <button
+                              key={wallet.adapter.name}
+                              onClick={() => handleConnectWallet(wallet.adapter.name)}
+                              className={`group w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 ${
+                                canConnect
+                                  ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 hover:from-purple-600 hover:via-pink-600 hover:to-purple-700 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/50 text-white'
+                                  : 'bg-slate-700/50 hover:bg-slate-700 text-gray-400 hover:text-gray-300'
+                              }`}
+                            >
+                              <span className="text-2xl">{walletIcon}</span>
+                              <span>{wallet.adapter.name}</span>
+                              {canConnect ? (
+                                <span className="text-xs opacity-90">{statusEmoji} Ready!</span>
+                              ) : (
+                                <span className="text-xs opacity-75">({readyState})</span>
+                              )}
+                            </button>
+                          );
+                        });
+                      })()}
                       <p className="text-xs text-gray-500 text-center mt-3">
-                        Found {wallets.length} wallet{wallets.length !== 1 ? 's' : ''} 🎉
+                        Found {wallets.filter(w => {
+                          const name = w.adapter.name.toLowerCase();
+                          return !name.includes('metamask') && !name.includes('ethereum') && 
+                                 !name.includes('walletconnect') && !name.includes('injected');
+                        }).length} Solana wallet{wallets.filter(w => {
+                          const name = w.adapter.name.toLowerCase();
+                          return !name.includes('metamask') && !name.includes('ethereum') && 
+                                 !name.includes('walletconnect') && !name.includes('injected');
+                        }).length !== 1 ? 's' : ''} 🎉
                       </p>
                     </div>
                   ) : (
