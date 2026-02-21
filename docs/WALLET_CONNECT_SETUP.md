@@ -1,4 +1,27 @@
-# WalletConnect / Reown AppKit Setup
+# WalletConnect / Reown Setup (RainbowKit)
+
+RainbowKit works on **mobile the same as desktop**: connect, pay, and switch chains. Mobile users typically connect via WalletConnect (scan QR or open in wallet). No special code is required; you only need the correct **project ID** and **domain allowlist** so the wallet list and icons load.
+
+## Mobile = desktop: what you need
+
+1. **Project ID**  
+   Get a free [Project ID from Reown (WalletConnect) Cloud](https://cloud.walletconnect.com/) and set it as **`VITE_WALLETCONNECT_PROJECT_ID`** in:
+   - **Vercel**: Project → Settings → Environment Variables (for Production and Preview if you use them).
+   - **Local**: `.env.local` with `VITE_WALLETCONNECT_PROJECT_ID=your_project_id`.  
+   Rebuild/redeploy after adding the variable. Without it, WalletConnect and the explorer wallet list cannot load (blank or empty modal).
+
+2. **Domain allowlist**  
+   In [Reown Dashboard](https://dashboard.reown.com/) → your project → **Domain** (or **Project Domains**) → add the **exact origin** your app is served from:
+   - Production: `https://fu-payme.vercel.app` (no path, no trailing slash)
+   - Optional: `fu-payme.vercel.app` (no scheme)  
+   The browser sends the [Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin) header; Reown rejects requests from origins not on the list (403 → blank tiles). On mobile, opening your link in **Chrome or Safari** sends the same origin as desktop. In-app browsers (e.g. from social apps) can send a different or empty origin — for best results, open the tip link in the device’s main browser.
+
+3. **No custom wallet list**  
+   Use RainbowKit’s default config (no `wallets` override) so the full wallet list and WalletConnect flow come from the Explorer API. Connect and pay on mobile works the same as on desktop once the project ID and domain are set.
+
+References: [RainbowKit Installation](https://rainbowkit.com/en-US/docs/installation) (projectId), [Reown Relay – Allowlist](https://docs.reown.com/cloud/relay#allowlist).
+
+---
 
 ## Blank wallet cards (0 wallets, empty modal)
 
@@ -34,8 +57,7 @@ Same URL can still behave differently on mobile if the browser sends a different
 
 ### 403 from wallet list (fetchWallets / fetchWalletsByPage)
 
-If the console shows **Uncaught (in promise) … "HTTP status code: 403"** and the stack mentions `fetchWallets` or `fetchWalletsByPage`, the wallet-list request is being rejected. Our probe can still return 200 if it hits a different endpoint or timing. If your domain is already allowlisted for hours, add `https://fu-payme.vercel.app/` (trailing slash) and contact [Reown support](https://discord.gg/reown) (#developers-forum) with: “403 on fetchWallets/fetchWalletsByPage on mobile; origin allowlisted (fu-payme.vercel.app and https://fu-payme.vercel.app) for hours.” The app uses a small **customWallets** fallback so mobile still shows a few wallets when the API returns 403.
-
+If the console shows **Uncaught (in promise) … "HTTP status code: 403"** and the stack mentions `fetchWallets` or `fetchWalletsByPage`, the wallet-list request is being rejected. Our probe can still return 200 if it hits a different endpoint or timing. If your domain is already allowlisted for hours, add `https://fu-payme.vercel.app/` (trailing slash) and contact [Reown support](https://discord.gg/reown) (#developers-forum) with: “403 on fetchWallets/fetchWalletsByPage on mobile; origin allowlisted (fu-payme.vercel.app and https://fu-payme.vercel.app) for hours.” 
 ### Verify it works
 
-After adding domains, refresh the app. The connect modal should show the full WalletConnect wallet list (or the customWallets fallback if the API still returns 403).
+After setting the project ID (and redeploying) and adding domains, refresh the app. The connect modal should show the full wallet list and WalletConnect flow on both desktop and mobile.
