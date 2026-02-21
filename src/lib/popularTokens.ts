@@ -18,6 +18,14 @@ export const POPULAR_TOKENS: Record<string, Record<string, TokenConfig[]>> = {
       { symbol: 'DAI', name: 'Dai Stablecoin', contractAddress: '0x6B175474E89094C44Da98b954EedeAC495271d0F', decimals: 18 },
     ],
   },
+  base: {
+    native: [
+      { symbol: 'ETH', name: 'Ethereum', contractAddress: 'native', decimals: 18 },
+    ],
+    tokens: [
+      { symbol: 'USDC', name: 'USD Coin', contractAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', decimals: 6 },
+    ],
+  },
   solana: {
     native: [
       { symbol: 'SOL', name: 'Solana', contractAddress: 'native', decimals: 9 },

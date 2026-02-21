@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Copy, Check, ArrowLeft, Wallet } from 'lucide-react';
 import EthereumTip from './EthereumTip';
+import BaseTip from './BaseTip';
 import SolanaTip from './SolanaTip';
 import { UserProfile } from './ProfileCreation';
 
-type Chain = 'ethereum' | 'solana';
+type Chain = 'ethereum' | 'base' | 'solana';
 type View = 'menu' | 'detail' | 'pay';
 
 interface ChainOption {
@@ -31,6 +32,15 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
       icon: '⟠',
       gradient: 'from-blue-500 to-cyan-500',
       accent: 'text-cyan-400',
+    });
+    // base uses same EVM address as ethereum
+    chains.push({
+      chain: 'base',
+      address: profile.ethereumAddress,
+      label: 'Base',
+      icon: '⬡',
+      gradient: 'from-indigo-500 to-blue-500',
+      accent: 'text-indigo-400',
     });
   }
   if (profile.solanaAddress) {
@@ -71,6 +81,14 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
   if (view === 'pay' && selectedChain === 'ethereum') {
     return (
       <EthereumTip
+        onBack={() => setView('detail')}
+        receivingAddress={profile.ethereumAddress}
+      />
+    );
+  }
+  if (view === 'pay' && selectedChain === 'base') {
+    return (
+      <BaseTip
         onBack={() => setView('detail')}
         receivingAddress={profile.ethereumAddress}
       />
@@ -176,7 +194,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
                 <div className="text-left">
                   <div className="font-semibold text-xl">{c.label}</div>
                   <div className="text-sm text-gray-400">
-                    {c.chain === 'ethereum' ? 'ETH & ERC-20 tokens' : 'SOL & SPL tokens'}
+                    {c.chain === 'ethereum' ? 'ETH & ERC-20 tokens' : c.chain === 'base' ? 'ETH & tokens on Base' : 'SOL & SPL tokens'}
                   </div>
                 </div>
               </button>
