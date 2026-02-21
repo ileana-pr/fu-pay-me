@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
+import { useAppKit } from '@reown/appkit/react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
@@ -44,7 +45,7 @@ export default function ProfileCreation({ onSave, onBack }: ProfileCreationProps
 
   // eth wallet hooks
   const { address: ethAddress, isConnected: ethConnected } = useAccount();
-  const { connect, connectors, error: connectError, isPending: isConnecting, reset: resetConnect } = useConnect();
+  const { open } = useAppKit();
   const { disconnect: disconnectEth } = useDisconnect();
 
   // sol wallet hooks
@@ -94,17 +95,10 @@ export default function ProfileCreation({ onSave, onBack }: ProfileCreationProps
       setStep('confirm');
       return;
     }
-    const wc = connectors.find(c => c.id === 'walletConnect' || c.name?.toLowerCase().includes('walletconnect'));
-    if (wc) {
-      try {
-        if (connectError) {
-          resetConnect();
-          disconnectEth();
-        }
-        await connect({ connector: wc });
-      } catch (err) {
-        console.error('ETH connect error:', err);
-      }
+    try {
+      await open({ view: 'Connect' });
+    } catch (err) {
+      console.error('ETH connect error:', err);
     }
   };
 
@@ -220,7 +214,6 @@ export default function ProfileCreation({ onSave, onBack }: ProfileCreationProps
           <div className="space-y-4">
             <button
               onClick={handleConnectEth}
-              disabled={isConnecting}
               className="w-full p-5 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center gap-4 transition-all hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-2xl">
@@ -228,18 +221,9 @@ export default function ProfileCreation({ onSave, onBack }: ProfileCreationProps
               </div>
               <div className="text-left flex-1">
                 <div className="font-semibold text-lg">Ethereum Wallet</div>
-                <div className="text-sm text-gray-400">
-                  {isConnecting ? 'Connecting...' : 'WalletConnect — scan QR or open wallet'}
-                </div>
+                <div className="text-sm text-gray-400">WalletConnect — scan QR or open wallet</div>
               </div>
-              {isConnecting && <Loader2 className="w-5 h-5 animate-spin" />}
             </button>
-            {connectError && (
-              <p className="text-sm text-red-400">
-                {(connectError as Error).message}
-                <span className="block mt-1 text-gray-400">Tap the button above to try again.</span>
-              </p>
-            )}
 
             <div className="text-sm text-gray-400 mt-4 mb-2">Or connect Solana:</div>
             <button
