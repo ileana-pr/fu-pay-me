@@ -80,50 +80,47 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
     try {
       setIsSolSending(true);
 
+      // required by Phantom/RPC: set recentBlockhash and feePayer before sending
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      const transaction = new Transaction();
+
       if (selectedToken.contractAddress === 'native') {
         // Native SOL transfer
         const recipientPubkey = new PublicKey(receivingAddress);
         const amountLamports = parseFloat(amount) * LAMPORTS_PER_SOL;
-
-        const transaction = new Transaction().add(
+        transaction.add(
           SystemProgram.transfer({
             fromPubkey: solAddress,
             toPubkey: recipientPubkey,
             lamports: amountLamports,
           })
         );
-
-        const signature = await wallet?.adapter.sendTransaction(transaction, connection);
-        setSolHash(signature || null);
-
-        if (signature) {
-          await connection.confirmTransaction(signature, 'confirmed');
-          setIsSolSuccess(true);
-        }
       } else {
         // SPL token transfer
         const mintPubkey = new PublicKey(selectedToken.contractAddress);
         const recipientPubkey = new PublicKey(receivingAddress);
         const senderTokenAccount = await getAssociatedTokenAddress(mintPubkey, solAddress);
         const recipientTokenAccount = await getAssociatedTokenAddress(mintPubkey, recipientPubkey);
-
         const amountInSmallestUnit = BigInt(parseFloat(amount) * Math.pow(10, selectedToken.decimals));
-
-        const transferInstruction = createTransferInstruction(
-          senderTokenAccount,
-          recipientTokenAccount,
-          solAddress,
-          amountInSmallestUnit
+        transaction.add(
+          createTransferInstruction(
+            senderTokenAccount,
+            recipientTokenAccount,
+            solAddress,
+            amountInSmallestUnit
+          )
         );
+      }
 
-        const transaction = new Transaction().add(transferInstruction);
-        const signature = await wallet?.adapter.sendTransaction(transaction, connection);
-        setSolHash(signature || null);
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = solAddress;
 
-        if (signature) {
-          await connection.confirmTransaction(signature, 'confirmed');
-          setIsSolSuccess(true);
-        }
+      const signature = await wallet?.adapter.sendTransaction(transaction, connection);
+      setSolHash(signature || null);
+
+      if (signature) {
+        await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
+        setIsSolSuccess(true);
       }
 
       setIsSolSending(false);
