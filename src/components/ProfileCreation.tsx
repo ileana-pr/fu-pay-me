@@ -10,9 +10,11 @@ const ensClient = createPublicClient({
   transport: http(),
 });
 
-// simplified profile — only eth and sol (payment addresses for receiving tips)
+// simplified profile — payment addresses for receiving tips
 export interface UserProfile {
   ethereumAddress: string;
+  /** base payment address (or .base name); optional for backward compatibility */
+  baseAddress?: string;
   solanaAddress: string;
 }
 
@@ -28,18 +30,21 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
   const [step, setStep] = useState<Step>('chains');
   const [profile, setProfile] = useState<UserProfile>({
     ethereumAddress: initialProfile?.ethereumAddress ?? '',
+    baseAddress: initialProfile?.baseAddress ?? '',
     solanaAddress: initialProfile?.solanaAddress ?? '',
   });
-  const [editingChain, setEditingChain] = useState<'ethereum' | 'solana'>('ethereum');
+  const [editingChain, setEditingChain] = useState<'ethereum' | 'base' | 'solana'>('ethereum');
   const [manualAddress, setManualAddress] = useState('');
   const [isResolving, setIsResolving] = useState(false);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
 
-  // user picks a chain for manual address entry
-  const handlePickChain = (chain: 'ethereum' | 'solana') => {
+  const getAddressForChain = (chain: 'ethereum' | 'base' | 'solana') =>
+    chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : profile.solanaAddress;
+
+  const handlePickChain = (chain: 'ethereum' | 'base' | 'solana') => {
     setEditingChain(chain);
-    setManualAddress(chain === 'ethereum' ? profile.ethereumAddress : profile.solanaAddress);
+    setManualAddress(getAddressForChain(chain) ?? '');
     setResolvedAddress(null);
     setResolveError(null);
     setStep('manual');
@@ -48,6 +53,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
   const isDomainName = useCallback((input: string) => {
     const trimmed = input.trim().toLowerCase();
     if (editingChain === 'ethereum') return trimmed.endsWith('.eth');
+    if (editingChain === 'base') return trimmed.endsWith('.base');
     if (editingChain === 'solana') return trimmed.endsWith('.sol');
     return false;
   }, [editingChain]);
@@ -62,6 +68,14 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
         const address = await ensClient.getEnsAddress({ name: normalize(domain) });
         if (!address) throw new Error('no address found for this ENS name');
         setResolvedAddress(address);
+      } else if (domain.endsWith('.base')) {
+        const name = domain.replace(/\.base$/i, '');
+        const res = await fetch(`https://api.basename.app/v1/names/${encodeURIComponent(name)}`);
+        if (!res.ok) throw new Error('could not resolve .base name');
+        const data = await res.json();
+        const addr = data?.address ?? data?.owner ?? data?.eth_address;
+        if (!addr) throw new Error('no address found for this .base name');
+        setResolvedAddress(addr);
       } else if (domain.endsWith('.sol')) {
         const res = await fetch(`https://sns-sdk-proxy.bonfida.workers.dev/resolve/${domain.replace('.sol', '')}`);
         if (!res.ok) throw new Error('could not resolve .sol domain');
@@ -81,6 +95,8 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     if (!address) return;
     if (editingChain === 'ethereum') {
       setProfile(p => ({ ...p, ethereumAddress: address }));
+    } else if (editingChain === 'base') {
+      setProfile(p => ({ ...p, baseAddress: address }));
     } else {
       setProfile(p => ({ ...p, solanaAddress: address }));
     }
@@ -92,7 +108,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
 
   const handleFinalSave = () => onSave(profile);
 
-  const hasAnyAddress = profile.ethereumAddress || profile.solanaAddress;
+  const hasAnyAddress = profile.ethereumAddress || profile.baseAddress || profile.solanaAddress;
 
   // ─── step 1: pick a chain to add or edit ───
   if (step === 'chains') {
@@ -119,6 +135,22 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                   <div className="font-semibold text-xl">Ethereum</div>
                   <div className="text-sm text-gray-400">
                     {profile.ethereumAddress ? `${profile.ethereumAddress.slice(0, 10)}...` : 'ETH address or .eth'}
+                  </div>
+                </div>
+              </div>
+              <Plus className="w-5 h-5 text-gray-400" />
+            </button>
+
+            <button
+              onClick={() => handlePickChain('base')}
+              className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center justify-between transition-all hover:scale-[1.02]"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-indigo-500/20 rounded-xl flex items-center justify-center text-3xl">⬡</div>
+                <div className="text-left">
+                  <div className="font-semibold text-xl">Base</div>
+                  <div className="text-sm text-gray-400">
+                    {profile.baseAddress ? `${profile.baseAddress.slice(0, 10)}...` : 'ETH address or .base'}
                   </div>
                 </div>
               </div>
@@ -169,10 +201,11 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
 
           <div className="text-center mb-10">
             <h1 className="text-3xl font-bold mb-2">
-              {editingChain === 'ethereum' ? 'Ethereum' : 'Solana'} Address
+              {editingChain === 'ethereum' ? 'Ethereum' : editingChain === 'base' ? 'Base' : 'Solana'} Address
             </h1>
             <p className="text-gray-400">
-              paste a wallet address{editingChain === 'ethereum' ? ' or ENS name (e.g. vitalik.eth)' : ' or .sol domain'}
+              paste a wallet address
+              {editingChain === 'ethereum' ? ' or ENS name (e.g. vitalik.eth)' : editingChain === 'base' ? ' or .base name' : ' or .sol domain'}
             </p>
           </div>
 
@@ -185,7 +218,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 setResolvedAddress(null);
                 setResolveError(null);
               }}
-              placeholder={editingChain === 'ethereum' ? '0x... or name.eth' : 'Base58 address or name.sol'}
+              placeholder={editingChain === 'ethereum' ? '0x... or name.eth' : editingChain === 'base' ? '0x... or name.base' : 'Base58 address or name.sol'}
               className="w-full px-4 py-4 bg-slate-800/60 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 text-white placeholder-gray-500 text-lg"
               autoFocus
             />
@@ -212,7 +245,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 {isResolving ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> Resolving...</>
                 ) : (
-                  <>Resolve {manualAddress.trim().toLowerCase().endsWith('.eth') ? 'ENS' : '.sol'} Name</>
+                  <>Resolve {manualAddress.trim().toLowerCase().endsWith('.eth') ? 'ENS' : manualAddress.trim().toLowerCase().endsWith('.base') ? '.base' : '.sol'} Name</>
                 )}
               </button>
             ) : (
@@ -261,6 +294,31 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 className="flex items-center gap-1 text-sm text-gray-500 hover:text-cyan-400 transition-colors"
               >
                 <Plus className="w-4 h-4" /> Add ETH address
+              </button>
+            )}
+          </div>
+
+          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⬡</span>
+                <span className="font-semibold">Base</span>
+              </div>
+              <button
+                onClick={() => handlePickChain('base')}
+                className="text-xs text-gray-500 hover:text-white transition-colors"
+              >
+                {profile.baseAddress ? 'Edit' : 'Add'}
+              </button>
+            </div>
+            {profile.baseAddress ? (
+              <code className="text-indigo-400 text-sm break-all">{profile.baseAddress}</code>
+            ) : (
+              <button
+                onClick={() => handlePickChain('base')}
+                className="flex items-center gap-1 text-sm text-gray-500 hover:text-indigo-400 transition-colors"
+              >
+                <Plus className="w-4 h-4" /> Add Base address
               </button>
             )}
           </div>

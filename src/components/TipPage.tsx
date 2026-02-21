@@ -33,10 +33,13 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
       gradient: 'from-blue-500 to-cyan-500',
       accent: 'text-cyan-400',
     });
-    // base uses same EVM address as ethereum
+  }
+  // base: use dedicated base address if set, else fall back to eth address (same EVM format)
+  const baseAddress = profile.baseAddress ?? profile.ethereumAddress;
+  if (baseAddress) {
     chains.push({
       chain: 'base',
-      address: profile.ethereumAddress,
+      address: baseAddress,
       label: 'Base',
       icon: '⬡',
       gradient: 'from-indigo-500 to-blue-500',
@@ -90,7 +93,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
     return (
       <BaseTip
         onBack={() => setView('detail')}
-        receivingAddress={profile.ethereumAddress}
+        receivingAddress={baseAddress}
       />
     );
   }
