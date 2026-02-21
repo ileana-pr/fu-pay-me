@@ -29,7 +29,8 @@ Same URL can still behave differently on mobile if the browser sends a different
 3. Or use **remote debugging** (USB + computer): iOS → Safari Develop menu; Android → Chrome `chrome://inspect`.
 4. In the console, look for `[Explorer API]` — it logs `status`, `origin`, and `isMobile`.
    - **403**: Add that exact `origin` in Reown Dashboard → Project Domains (updates can take ~15 min).
-   - **200** but still empty: possible version mismatch or relay/network issue; ensure all `@reown/*` packages share the same version.
+   - **200** but you see **"failed to fetch remote project configuration"** or **"failed to fetch usage"**: AppKit calls several Reown APIs (explorer, project config, usage). The explorer can return 200 while project config/usage still reject the request on mobile (same allowlist, different endpoint). **Fix:** In [Reown Dashboard](https://dashboard.reown.com/) → your project → **Project Domains** → Configure Domains, add **both** `https://fu-payme.vercel.app` and `fu-payme.vercel.app` (no scheme). Save and wait ~15 min, then try again on mobile.
+   - **200** and no config/usage errors but still empty: version mismatch or relay; ensure all `@reown/*` packages share the same version.
 
 ### Verify it works
 

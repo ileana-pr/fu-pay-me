@@ -572,9 +572,11 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                     </div>
                   )}
                   {explorerApiStatus?.status === 200 && (
-                    <div className="p-3 rounded-lg bg-slate-700/40 border border-slate-500/30 text-slate-300 text-sm">
+                    <div className="p-3 rounded-lg bg-slate-700/40 border border-slate-500/30 text-slate-300 text-sm space-y-2">
                       <p className="font-medium mb-1">Explorer API: OK ({explorerApiStatus.walletCount ?? '?'} wallets)</p>
-                      <p className="opacity-90">Still blank tiles? Open this page with <code className="bg-black/30 px-1 rounded">?debug=1</code> in the URL for a console, or try another browser.</p>
+                      <p className="opacity-90">Seeing &quot;failed to fetch remote project configuration&quot;? Add this <strong>exact</strong> origin in Reown Dashboard → Project Domains:</p>
+                      <p className="font-mono text-xs bg-black/40 px-2 py-1.5 rounded break-all" title="Copy and add to allowlist">{explorerApiStatus.origin}</p>
+                      <p className="opacity-90 text-xs">Also try adding <code className="bg-black/30 px-1 rounded">{explorerApiStatus.origin}/</code> (with trailing slash). If both are allowlisted and it still fails, contact Reown support (Discord/docs).</p>
                     </div>
                   )}
                   {/* primary: open AppKit connect modal (mobile-friendly deep links + WalletConnect) */}
