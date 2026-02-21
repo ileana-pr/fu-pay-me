@@ -1,0 +1,13 @@
+diff --git a/node_modules/@reown/appkit-common/dist/esm/src/utils/ConstantsUtil.js b/node_modules/@reown/appkit-common/dist/esm/src/utils/ConstantsUtil.js
+index 9d3b90d..97bad88 100644
+--- a/node_modules/@reown/appkit-common/dist/esm/src/utils/ConstantsUtil.js
++++ b/node_modules/@reown/appkit-common/dist/esm/src/utils/ConstantsUtil.js
+@@ -3,7 +3,7 @@ export const ConstantsUtil = {
+     WC_NAME_SUFFIX_LEGACY: '.wcn.id',
+     BLOCKCHAIN_API_RPC_URL: 'https://rpc.walletconnect.org',
+     PULSE_API_URL: 'https://pulse.walletconnect.org',
+-    W3M_API_URL: 'https://api.web3modal.org',
++    W3M_API_URL: 'https://api.web3modal.com',
+     CONNECTOR_ID: {
+         WALLET_CONNECT: 'walletConnect',
+         INJECTED: 'injected',

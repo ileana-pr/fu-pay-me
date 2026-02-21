@@ -20,7 +20,7 @@ export const wagmiAdapter = new WagmiAdapter({
   ssr: false,
 });
 
-// create modal — hide "search wallet" (blank on mobile), show featured only
+// create modal — api.web3modal.org returns 403, patched to .com in appkit-common
 if (projectId) {
   createAppKit({
     adapters: [wagmiAdapter],
@@ -28,12 +28,6 @@ if (projectId) {
     projectId,
     metadata,
     enableCoinbase: false,
-    allWallets: 'HIDE',
-    featuredWalletIds: [
-      '1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369', // MetaMask
-      '4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0', // Trust Wallet
-      '38f5d18bd8522c244bdd70cb4a68e0e718865155811c043f082fb9a3c8e5f1e4', // Rainbow
-    ],
     features: {
       analytics: false,
       swaps: false,
