@@ -21,7 +21,7 @@ export default function HomePage({ onCreateProfile, onViewProfile, hasProfile }:
             one QR code. instant crypto payments.
           </p>
           <p className="text-gray-500">
-            set up your ETH & SOL wallets, share a QR code, get paid
+            add your ETH & SOL addresses, share a QR code, get paid
           </p>
         </div>
 

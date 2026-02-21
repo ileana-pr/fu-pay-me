@@ -77,6 +77,7 @@ function App() {
             <ProfileCreation
               onSave={handleSaveProfile}
               onBack={handleBackToHome}
+              initialProfile={userProfile}
             />
           )}
           {currentPage === 'view' && userProfile && (
