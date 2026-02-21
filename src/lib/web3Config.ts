@@ -5,6 +5,11 @@ import { mainnet } from '@reown/appkit/networks';
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
 
+// log origin so you can confirm it matches Reown allowlist (must be exactly fu-pay-me.vercel.app)
+if (typeof window !== 'undefined') {
+  console.log('[Reown] App origin (add this to Reown Dashboard → Domain):', window.location.origin);
+}
+
 const metadata = {
   name: 'FU Pay Me',
   description: 'Get paid with crypto',
@@ -54,7 +59,7 @@ const customWallets = [
   },
 ];
 
-// create modal — ensure your domain is in Project Domains at dashboard.reown.com (otherwise 403, blank wallets)
+// create modal — in Reown Dashboard → Domain, allowlist exactly: https://fu-pay-me.vercel.app and/or fu-pay-me.vercel.app (hyphen in "pay-me")
 if (projectId) {
   createAppKit({
     adapters: [wagmiAdapter],
