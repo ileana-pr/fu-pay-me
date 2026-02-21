@@ -43,7 +43,7 @@ function App() {
       return (
         <WagmiProvider config={config}>
           <QueryClientProvider client={queryClient}>
-            <RainbowKitProvider>
+            <RainbowKitProvider coolMode={false}>
               <SolanaWalletProvider>
                 <TipPage profile={profile} />
               </SolanaWalletProvider>
@@ -69,7 +69,7 @@ function App() {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
+        <RainbowKitProvider coolMode={false}>
           <SolanaWalletProvider>
             {currentPage === 'home' && (
               <HomePage
