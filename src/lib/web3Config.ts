@@ -5,31 +5,6 @@ import { mainnet } from '@reown/appkit/networks';
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
 
-// log origin and probe explorer API so we can see exactly what AppKit gets (403 vs 200, body)
-if (typeof window !== 'undefined' && projectId) {
-  console.log('[Reown] App origin (must match Reown Dashboard → Domain):', window.location.origin);
-  const explorerUrl = `https://explorer-api.walletconnect.com/v3/wallets?projectId=${projectId}&entries=5&page=1`;
-  fetch(explorerUrl)
-    .then((res) => {
-      const status = res.status;
-      return res.text().then((text) => ({ status, text }));
-    })
-    .then(({ status, text }) => {
-      if (status !== 200) {
-        console.warn('[Reown] Explorer API error — AppKit wallet list will fall back to customWallets only.', { status, body: text.slice(0, 500) });
-      } else {
-        try {
-          const data = JSON.parse(text);
-          const count = data?.listings?.length ?? data?.data?.length ?? '?';
-          console.log('[Reown] Explorer API OK — wallet list loaded.', { status, walletCount: count });
-        } catch {
-          console.log('[Reown] Explorer API response:', { status, bodyPreview: text.slice(0, 200) });
-        }
-      }
-    })
-    .catch((err) => console.warn('[Reown] Explorer API fetch failed (network/CORS?).', err));
-}
-
 const metadata = {
   name: 'FU Pay Me',
   description: 'Get paid with crypto',
@@ -45,41 +20,7 @@ export const wagmiAdapter = new WagmiAdapter({
   ssr: false,
 });
 
-// custom wallets shown when api.web3modal.com returns 403 (e.g. mobile, unverified domain)
-const customWallets = [
-  {
-    id: 'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96',
-    name: 'MetaMask',
-    homepage: 'https://metamask.io',
-    image_url: `https://explorer-api.walletconnect.com/v3/logo/md/eebe4a7f-7166-402f-92e0-1f64ca2aa800?projectId=${projectId}`,
-    mobile_link: 'https://metamask.app.link',
-    webapp_link: 'https://metamask.io',
-    app_store: 'https://apps.apple.com/us/app/metamask/id1438144202',
-    play_store: 'https://play.google.com/store/apps/details?id=io.metamask',
-  },
-  {
-    id: '4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0',
-    name: 'Trust Wallet',
-    homepage: 'https://trustwallet.com',
-    image_url: `https://explorer-api.walletconnect.com/v3/logo/md/7677b54f-3486-46e2-4e37-bf8747814f00?projectId=${projectId}`,
-    mobile_link: 'https://link.trustwallet.com',
-    webapp_link: 'https://wallet.trustwallet.com',
-    app_store: 'https://apps.apple.com/app/apple-store/id1288339409',
-    play_store: 'https://play.google.com/store/apps/details?id=com.wallet.crypto.trustapp',
-  },
-  {
-    id: '9716482a7c7d419b8a8f5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e',
-    name: 'Uniswap Wallet',
-    homepage: 'https://wallet.uniswap.org',
-    image_url: 'https://wallet.uniswap.org/favicon.ico',
-    mobile_link: 'https://wallet.uniswap.org',
-    webapp_link: 'https://wallet.uniswap.org',
-    app_store: 'https://apps.apple.com/us/app/uniswap-wallet/id6443944476',
-    play_store: 'https://play.google.com/store/apps/details?id=com.uniswap.mobile',
-  },
-];
-
-// create modal — in Reown Dashboard → Domain, allowlist exactly: https://fu-payme.vercel.app and/or fu-payme.vercel.app
+// create modal — in Reown Dashboard → Domain, allowlist your app origin for explorer wallet list
 if (projectId) {
   createAppKit({
     adapters: [wagmiAdapter],
@@ -87,8 +28,7 @@ if (projectId) {
     projectId,
     metadata,
     enableCoinbase: false,
-    customWallets,
-    debug: true, // remove after testing: shows console errors (e.g. APKT002 = origin not allowlisted)
+    debug: true,
     features: {
       analytics: false,
       swaps: false,
