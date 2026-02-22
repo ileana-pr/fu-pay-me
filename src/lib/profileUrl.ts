@@ -4,6 +4,7 @@ import type { UserProfile } from '../components/ProfileCreation';
 const SHORT: Record<string, string> = {
   ethereumAddress: 'e',
   baseAddress: 'b',
+  bscAddress: 'n',
   solanaAddress: 's',
   cashAppCashtag: 'c',
   venmoUsername: 'v',
@@ -17,6 +18,7 @@ export function encodeProfileForUrl(profile: UserProfile): string {
   const compact: Record<string, string> = {};
   if (profile.ethereumAddress?.trim()) compact.e = profile.ethereumAddress.trim();
   if (profile.baseAddress?.trim()) compact.b = profile.baseAddress.trim();
+  if (profile.bscAddress?.trim()) compact.n = profile.bscAddress.trim();
   if (profile.solanaAddress?.trim()) compact.s = profile.solanaAddress.trim();
   if (profile.cashAppCashtag?.trim()) compact.c = profile.cashAppCashtag.trim();
   if (profile.venmoUsername?.trim()) compact.v = profile.venmoUsername.trim();
@@ -37,6 +39,7 @@ export function decodeProfileFromUrl(encoded: string): UserProfile {
     return {
       ethereumAddress: out.ethereumAddress ?? '',
       baseAddress: out.baseAddress,
+      bscAddress: out.bscAddress,
       solanaAddress: out.solanaAddress ?? '',
       cashAppCashtag: out.cashAppCashtag,
       venmoUsername: out.venmoUsername,

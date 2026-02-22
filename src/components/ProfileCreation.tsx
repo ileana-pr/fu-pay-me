@@ -15,6 +15,8 @@ export interface UserProfile {
   ethereumAddress: string;
   /** base payment address (or .base name); optional for backward compatibility */
   baseAddress?: string;
+  /** BNB Smart Chain payment address (0x); optional, same format as EVM */
+  bscAddress?: string;
   solanaAddress: string;
   /** cash app $cashtag (e.g. johndoe) — opens cash.app/$cashtag when tipper pays */
   cashAppCashtag?: string;
@@ -35,20 +37,21 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
   const [profile, setProfile] = useState<UserProfile>({
     ethereumAddress: initialProfile?.ethereumAddress ?? '',
     baseAddress: initialProfile?.baseAddress ?? '',
+    bscAddress: initialProfile?.bscAddress ?? '',
     solanaAddress: initialProfile?.solanaAddress ?? '',
     cashAppCashtag: initialProfile?.cashAppCashtag ?? '',
     venmoUsername: initialProfile?.venmoUsername ?? '',
   });
-  const [editingChain, setEditingChain] = useState<'ethereum' | 'base' | 'solana' | 'cashapp' | 'venmo'>('ethereum');
+  const [editingChain, setEditingChain] = useState<'ethereum' | 'base' | 'bsc' | 'solana' | 'cashapp' | 'venmo'>('ethereum');
   const [manualAddress, setManualAddress] = useState('');
   const [isResolving, setIsResolving] = useState(false);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
 
-  const getAddressForChain = (chain: 'ethereum' | 'base' | 'solana' | 'cashapp' | 'venmo') =>
-    chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ?? '') : (profile.venmoUsername ?? '');
+  const getAddressForChain = (chain: 'ethereum' | 'base' | 'bsc' | 'solana' | 'cashapp' | 'venmo') =>
+    chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bsc' ? profile.bscAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ?? '') : (profile.venmoUsername ?? '');
 
-  const handlePickChain = (chain: 'ethereum' | 'base' | 'solana' | 'cashapp' | 'venmo') => {
+  const handlePickChain = (chain: 'ethereum' | 'base' | 'bsc' | 'solana' | 'cashapp' | 'venmo') => {
     setEditingChain(chain);
     setManualAddress(getAddressForChain(chain) ?? '');
     setResolvedAddress(null);
@@ -126,9 +129,9 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     const looksLikeDomain = trimmed.toLowerCase().endsWith('.base') || trimmed.toLowerCase().endsWith('.eth') || trimmed.toLowerCase().endsWith('.sol') || trimmed.toLowerCase().includes('.base');
     const address = looksLikeDomain ? (resolvedAddress || null) : (resolvedAddress || trimmed);
     if (!address) return;
-    // base and ethereum must store a valid 0x address (never a name string like chygtt.base.eth)
-    if ((editingChain === 'base' || editingChain === 'ethereum') && !isValidEvmAddress(address)) {
-      setResolveError('Please enter a valid 0x address or resolve a .base / .eth name first.');
+    // base, ethereum, and bsc must store a valid 0x address (never a name string)
+    if ((editingChain === 'base' || editingChain === 'ethereum' || editingChain === 'bsc') && !isValidEvmAddress(address)) {
+      setResolveError(editingChain === 'bsc' ? 'Please enter a valid 0x address.' : 'Please enter a valid 0x address or resolve a .base / .eth name first.');
       return;
     }
     setResolveError(null);
@@ -136,6 +139,8 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
       setProfile(p => ({ ...p, ethereumAddress: address }));
     } else if (editingChain === 'base') {
       setProfile(p => ({ ...p, baseAddress: address }));
+    } else if (editingChain === 'bsc') {
+      setProfile(p => ({ ...p, bscAddress: address }));
     } else {
       setProfile(p => ({ ...p, solanaAddress: address }));
     }
@@ -147,15 +152,16 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
 
   const handleFinalSave = () => onSave(profile);
 
-  const removePayment = (kind: 'ethereum' | 'base' | 'solana' | 'cashapp' | 'venmo') => {
+  const removePayment = (kind: 'ethereum' | 'base' | 'bsc' | 'solana' | 'cashapp' | 'venmo') => {
     if (kind === 'ethereum') setProfile(p => ({ ...p, ethereumAddress: '' }));
     else if (kind === 'base') setProfile(p => ({ ...p, baseAddress: '' }));
+    else if (kind === 'bsc') setProfile(p => ({ ...p, bscAddress: '' }));
     else if (kind === 'solana') setProfile(p => ({ ...p, solanaAddress: '' }));
     else if (kind === 'cashapp') setProfile(p => ({ ...p, cashAppCashtag: '' }));
     else setProfile(p => ({ ...p, venmoUsername: '' }));
   };
 
-  const hasAnyAddress = profile.ethereumAddress || profile.baseAddress || profile.solanaAddress || !!profile.cashAppCashtag?.trim() || !!profile.venmoUsername?.trim();
+  const hasAnyAddress = profile.ethereumAddress || profile.baseAddress || profile.bscAddress || profile.solanaAddress || !!profile.cashAppCashtag?.trim() || !!profile.venmoUsername?.trim();
 
   // ─── step 1: pick a chain to add or edit ───
   if (step === 'chains') {
@@ -193,6 +199,18 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
               <span className="font-semibold text-sm">Base</span>
               <span className="text-xs text-gray-400 truncate w-full text-center">
                 {profile.baseAddress ? `${profile.baseAddress.slice(0, 8)}...` : 'ETH or .base'}
+              </span>
+            </button>
+
+            <button
+              onClick={() => handlePickChain('bsc')}
+              className="relative p-4 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] aspect-square min-h-0"
+            >
+              <Plus className="absolute top-2 right-2 w-4 h-4 text-gray-500" />
+              <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center text-xl font-bold text-amber-400">◆</div>
+              <span className="font-semibold text-sm">BNB Chain</span>
+              <span className="text-xs text-gray-400 truncate w-full text-center">
+                {profile.bscAddress ? `${profile.bscAddress.slice(0, 8)}...` : '0x address'}
               </span>
             </button>
 
@@ -333,11 +351,11 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
 
           <div className="text-center mb-10">
             <h1 className="text-3xl font-bold mb-2">
-              {editingChain === 'ethereum' ? 'Ethereum' : editingChain === 'base' ? 'Base' : 'Solana'} Address
+              {editingChain === 'ethereum' ? 'Ethereum' : editingChain === 'base' ? 'Base' : editingChain === 'bsc' ? 'BNB Chain' : 'Solana'} Address
             </h1>
             <p className="text-gray-400">
               paste a wallet address
-              {editingChain === 'ethereum' ? ' or ENS name (e.g. vitalik.eth)' : editingChain === 'base' ? ' or .base name' : ' or .sol domain'}
+              {editingChain === 'ethereum' ? ' or ENS name (e.g. vitalik.eth)' : editingChain === 'base' ? ' or .base name' : editingChain === 'bsc' ? ' (0x format)' : ' or .sol domain'}
             </p>
           </div>
 
@@ -350,7 +368,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 setResolvedAddress(null);
                 setResolveError(null);
               }}
-              placeholder={editingChain === 'ethereum' ? '0x... or name.eth' : editingChain === 'base' ? '0x... or name.base' : 'Base58 address or name.sol'}
+              placeholder={editingChain === 'ethereum' ? '0x... or name.eth' : editingChain === 'base' ? '0x... or name.base' : editingChain === 'bsc' ? '0x...' : 'Base58 address or name.sol'}
               className="w-full px-4 py-4 bg-slate-800/60 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 text-white placeholder-gray-500 text-lg"
               autoFocus
             />
@@ -368,7 +386,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
               </div>
             )}
 
-            {isDomainName(manualAddress) && !resolvedAddress ? (
+            {editingChain !== 'bsc' && isDomainName(manualAddress) && !resolvedAddress ? (
               <button
                 onClick={() => resolveDomain(manualAddress.trim().toLowerCase())}
                 disabled={isResolving}
@@ -473,6 +491,42 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 className="flex items-center gap-1 text-sm text-gray-500 hover:text-indigo-400 transition-colors"
               >
                 <Plus className="w-4 h-4" /> Add Base address
+              </button>
+            )}
+          </div>
+
+          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-bold text-amber-400">◆</span>
+                <span className="font-semibold">BNB Chain</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {profile.bscAddress && (
+                  <button
+                    onClick={() => removePayment('bsc')}
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+                    title="Remove"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Remove
+                  </button>
+                )}
+                <button
+                  onClick={() => handlePickChain('bsc')}
+                  className="text-xs text-gray-500 hover:text-white transition-colors"
+                >
+                  {profile.bscAddress ? 'Edit' : 'Add'}
+                </button>
+              </div>
+            </div>
+            {profile.bscAddress ? (
+              <code className="text-amber-400 text-sm break-all">{profile.bscAddress}</code>
+            ) : (
+              <button
+                onClick={() => handlePickChain('bsc')}
+                className="flex items-center gap-1 text-sm text-gray-500 hover:text-amber-400 transition-colors"
+              >
+                <Plus className="w-4 h-4" /> Add BNB address
               </button>
             )}
           </div>

@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Copy, Check, ArrowLeft, Wallet, ExternalLink } from 'lucide-react';
 import EthereumTip from './EthereumTip';
 import BaseTip from './BaseTip';
+import BscTip from './BscTip';
 import SolanaTip from './SolanaTip';
 import { UserProfile } from './ProfileCreation';
 
-type Chain = 'ethereum' | 'base' | 'solana';
+type Chain = 'ethereum' | 'base' | 'bsc' | 'solana';
 type PaymentMethod = Chain | 'cashapp' | 'venmo';
 type View = 'menu' | 'detail' | 'pay';
 
@@ -47,6 +48,17 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
       icon: '⬡',
       gradient: 'from-indigo-500 to-blue-500',
       accent: 'text-indigo-400',
+    });
+  }
+  const bscAddress = profile.bscAddress ?? profile.ethereumAddress;
+  if (bscAddress) {
+    chains.push({
+      chain: 'bsc',
+      address: bscAddress,
+      label: 'BNB Chain',
+      icon: '◆',
+      gradient: 'from-amber-500 to-yellow-500',
+      accent: 'text-amber-400',
     });
   }
   if (profile.solanaAddress) {
@@ -101,6 +113,14 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
       <BaseTip
         onBack={() => setView('detail')}
         receivingAddress={baseAddress}
+      />
+    );
+  }
+  if (view === 'pay' && selectedChain === 'bsc') {
+    return (
+      <BscTip
+        onBack={() => setView('detail')}
+        receivingAddress={bscAddress}
       />
     );
   }
@@ -323,7 +343,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
                 <div className="text-left">
                   <div className="font-semibold text-xl">{c.label}</div>
                   <div className="text-sm text-gray-400">
-                    {c.chain === 'ethereum' ? 'ETH & ERC-20 tokens' : c.chain === 'base' ? 'ETH & tokens on Base' : 'SOL & SPL tokens'}
+                    {c.chain === 'ethereum' ? 'ETH & ERC-20 tokens' : c.chain === 'base' ? 'ETH & tokens on Base' : c.chain === 'bsc' ? 'BNB & tokens on BNB Chain' : 'SOL & SPL tokens'}
                   </div>
                 </div>
               </button>
