@@ -18,6 +18,8 @@ export interface UserProfile {
   solanaAddress: string;
   /** cash app $cashtag (e.g. johndoe) — opens cash.app/$cashtag when tipper pays */
   cashAppCashtag?: string;
+  /** venmo username (e.g. johndoe) — opens venmo.com/username?txn=pay when tipper pays */
+  venmoUsername?: string;
 }
 
 interface ProfileCreationProps {
@@ -35,17 +37,18 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     baseAddress: initialProfile?.baseAddress ?? '',
     solanaAddress: initialProfile?.solanaAddress ?? '',
     cashAppCashtag: initialProfile?.cashAppCashtag ?? '',
+    venmoUsername: initialProfile?.venmoUsername ?? '',
   });
-  const [editingChain, setEditingChain] = useState<'ethereum' | 'base' | 'solana' | 'cashapp'>('ethereum');
+  const [editingChain, setEditingChain] = useState<'ethereum' | 'base' | 'solana' | 'cashapp' | 'venmo'>('ethereum');
   const [manualAddress, setManualAddress] = useState('');
   const [isResolving, setIsResolving] = useState(false);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
 
-  const getAddressForChain = (chain: 'ethereum' | 'base' | 'solana' | 'cashapp') =>
-    chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'solana' ? profile.solanaAddress : (profile.cashAppCashtag ?? '');
+  const getAddressForChain = (chain: 'ethereum' | 'base' | 'solana' | 'cashapp' | 'venmo') =>
+    chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ?? '') : (profile.venmoUsername ?? '');
 
-  const handlePickChain = (chain: 'ethereum' | 'base' | 'solana' | 'cashapp') => {
+  const handlePickChain = (chain: 'ethereum' | 'base' | 'solana' | 'cashapp' | 'venmo') => {
     setEditingChain(chain);
     setManualAddress(getAddressForChain(chain) ?? '');
     setResolvedAddress(null);
@@ -109,6 +112,17 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
       setStep('review');
       return;
     }
+    // venmo: store username without @, lowercase
+    if (editingChain === 'venmo') {
+      const username = trimmed.replace(/^@/, '').toLowerCase();
+      if (!username) return;
+      setProfile(p => ({ ...p, venmoUsername: username }));
+      setManualAddress('');
+      setResolvedAddress(null);
+      setResolveError(null);
+      setStep('review');
+      return;
+    }
     const looksLikeDomain = trimmed.toLowerCase().endsWith('.base') || trimmed.toLowerCase().endsWith('.eth') || trimmed.toLowerCase().endsWith('.sol') || trimmed.toLowerCase().includes('.base');
     const address = looksLikeDomain ? (resolvedAddress || null) : (resolvedAddress || trimmed);
     if (!address) return;
@@ -133,14 +147,15 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
 
   const handleFinalSave = () => onSave(profile);
 
-  const removePayment = (kind: 'ethereum' | 'base' | 'solana' | 'cashapp') => {
+  const removePayment = (kind: 'ethereum' | 'base' | 'solana' | 'cashapp' | 'venmo') => {
     if (kind === 'ethereum') setProfile(p => ({ ...p, ethereumAddress: '' }));
     else if (kind === 'base') setProfile(p => ({ ...p, baseAddress: '' }));
     else if (kind === 'solana') setProfile(p => ({ ...p, solanaAddress: '' }));
-    else setProfile(p => ({ ...p, cashAppCashtag: '' }));
+    else if (kind === 'cashapp') setProfile(p => ({ ...p, cashAppCashtag: '' }));
+    else setProfile(p => ({ ...p, venmoUsername: '' }));
   };
 
-  const hasAnyAddress = profile.ethereumAddress || profile.baseAddress || profile.solanaAddress;
+  const hasAnyAddress = profile.ethereumAddress || profile.baseAddress || profile.solanaAddress || !!profile.cashAppCashtag?.trim() || !!profile.venmoUsername?.trim();
 
   // ─── step 1: pick a chain to add or edit ───
   if (step === 'chains') {
@@ -220,6 +235,22 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
               </div>
               <Plus className="w-5 h-5 text-gray-400" />
             </button>
+
+            <button
+              onClick={() => handlePickChain('venmo')}
+              className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center justify-between transition-all hover:scale-[1.02]"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-sky-500/20 rounded-xl flex items-center justify-center text-2xl font-bold text-sky-400">V</div>
+                <div className="text-left">
+                  <div className="font-semibold text-xl">Venmo</div>
+                  <div className="text-sm text-gray-400">
+                    {profile.venmoUsername ? `@${profile.venmoUsername}` : 'username (e.g. johndoe)'}
+                  </div>
+                </div>
+              </div>
+              <Plus className="w-5 h-5 text-gray-400" />
+            </button>
           </div>
 
           {hasAnyAddress && (
@@ -235,7 +266,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     );
   }
 
-  // ─── step 2: manual address input (or cash app cashtag) ───
+  // ─── step 2: manual address input (or cash app cashtag / venmo username) ───
   if (step === 'manual') {
     // cash app: single field for $cashtag, no domain resolution
     if (editingChain === 'cashapp') {
@@ -267,6 +298,42 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 rounded-xl font-semibold text-lg disabled:opacity-40 hover:opacity-90 transition-opacity"
               >
                 Save $cashtag
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    // venmo: single field for username (with or without @)
+    if (editingChain === 'venmo') {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+          <div className="max-w-lg mx-auto px-4 py-12">
+            <button
+              onClick={() => setStep('chains')}
+              className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" /> Back
+            </button>
+            <div className="text-center mb-10">
+              <h1 className="text-3xl font-bold mb-2">Venmo username</h1>
+              <p className="text-gray-400">your Venmo username (with or without @)</p>
+            </div>
+            <div className="space-y-6">
+              <input
+                type="text"
+                value={manualAddress}
+                onChange={(e) => setManualAddress(e.target.value)}
+                placeholder="@johndoe or johndoe"
+                className="w-full px-4 py-4 bg-slate-800/60 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400 text-white placeholder-gray-500 text-lg"
+                autoFocus
+              />
+              <button
+                onClick={handleSaveAddress}
+                disabled={!manualAddress.trim().replace(/^@/, '').trim()}
+                className="w-full py-4 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl font-semibold text-lg disabled:opacity-40 hover:opacity-90 transition-opacity"
+              >
+                Save username
               </button>
             </div>
           </div>
@@ -498,6 +565,42 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 className="flex items-center gap-1 text-sm text-gray-500 hover:text-emerald-400 transition-colors"
               >
                 <Plus className="w-4 h-4" /> Add Cash App $cashtag
+              </button>
+            )}
+          </div>
+
+          <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-bold text-sky-400">V</span>
+                <span className="font-semibold">Venmo</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {profile.venmoUsername && (
+                  <button
+                    onClick={() => removePayment('venmo')}
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+                    title="Remove"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Remove
+                  </button>
+                )}
+                <button
+                  onClick={() => handlePickChain('venmo')}
+                  className="text-xs text-gray-500 hover:text-white transition-colors"
+                >
+                  {profile.venmoUsername ? 'Edit' : 'Add'}
+                </button>
+              </div>
+            </div>
+            {profile.venmoUsername ? (
+              <code className="text-sky-400 text-sm">@{profile.venmoUsername}</code>
+            ) : (
+              <button
+                onClick={() => handlePickChain('venmo')}
+                className="flex items-center gap-1 text-sm text-gray-500 hover:text-sky-400 transition-colors"
+              >
+                <Plus className="w-4 h-4" /> Add Venmo username
               </button>
             )}
           </div>
