@@ -161,102 +161,82 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
   if (step === 'chains') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-        <div className="max-w-lg mx-auto px-4 py-12">
-          <button onClick={onBack} className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft className="w-5 h-5" /> Back
+        <div className="max-w-lg mx-auto px-4 py-6">
+          <button onClick={onBack} className="mb-4 flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm">
+            <ArrowLeft className="w-4 h-4" /> Back
           </button>
 
-          <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold mb-2">Payment methods</h1>
-            <p className="text-gray-400">add crypto wallets and fiat payment apps — works with apps from any country</p>
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold mb-1">Payment methods</h1>
+            <p className="text-sm text-gray-400">add crypto wallets and fiat payment apps — works with apps from any country</p>
           </div>
 
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => handlePickChain('ethereum')}
-              className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center justify-between transition-all hover:scale-[1.02]"
+              className="relative p-4 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] aspect-square min-h-0"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center text-3xl">⟠</div>
-                <div className="text-left">
-                  <div className="font-semibold text-xl">Ethereum</div>
-                  <div className="text-sm text-gray-400">
-                    {profile.ethereumAddress ? `${profile.ethereumAddress.slice(0, 10)}...` : 'ETH address or .eth'}
-                  </div>
-                </div>
-              </div>
-              <Plus className="w-5 h-5 text-gray-400" />
+              <Plus className="absolute top-2 right-2 w-4 h-4 text-gray-500" />
+              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center text-xl">⟠</div>
+              <span className="font-semibold text-sm">Ethereum</span>
+              <span className="text-xs text-gray-400 truncate w-full text-center">
+                {profile.ethereumAddress ? `${profile.ethereumAddress.slice(0, 8)}...` : 'ETH or .eth'}
+              </span>
             </button>
 
             <button
               onClick={() => handlePickChain('base')}
-              className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center justify-between transition-all hover:scale-[1.02]"
+              className="relative p-4 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] aspect-square min-h-0"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-indigo-500/20 rounded-xl flex items-center justify-center text-3xl">⬡</div>
-                <div className="text-left">
-                  <div className="font-semibold text-xl">Base</div>
-                  <div className="text-sm text-gray-400">
-                    {profile.baseAddress ? `${profile.baseAddress.slice(0, 10)}...` : 'ETH address or .base'}
-                  </div>
-                </div>
-              </div>
-              <Plus className="w-5 h-5 text-gray-400" />
+              <Plus className="absolute top-2 right-2 w-4 h-4 text-gray-500" />
+              <div className="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center text-xl">⬡</div>
+              <span className="font-semibold text-sm">Base</span>
+              <span className="text-xs text-gray-400 truncate w-full text-center">
+                {profile.baseAddress ? `${profile.baseAddress.slice(0, 8)}...` : 'ETH or .base'}
+              </span>
             </button>
 
             <button
               onClick={() => handlePickChain('solana')}
-              className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center justify-between transition-all hover:scale-[1.02]"
+              className="relative p-4 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] aspect-square min-h-0"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center text-3xl">◎</div>
-                <div className="text-left">
-                  <div className="font-semibold text-xl">Solana</div>
-                  <div className="text-sm text-gray-400">
-                    {profile.solanaAddress ? `${profile.solanaAddress.slice(0, 10)}...` : 'SOL address or .sol'}
-                  </div>
-                </div>
-              </div>
-              <Plus className="w-5 h-5 text-gray-400" />
+              <Plus className="absolute top-2 right-2 w-4 h-4 text-gray-500" />
+              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center text-xl">◎</div>
+              <span className="font-semibold text-sm">Solana</span>
+              <span className="text-xs text-gray-400 truncate w-full text-center">
+                {profile.solanaAddress ? `${profile.solanaAddress.slice(0, 8)}...` : 'SOL or .sol'}
+              </span>
             </button>
 
             <button
               onClick={() => handlePickChain('cashapp')}
-              className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center justify-between transition-all hover:scale-[1.02]"
+              className="relative p-4 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] aspect-square min-h-0"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-emerald-500/20 rounded-xl flex items-center justify-center text-2xl font-bold text-emerald-400">$</div>
-                <div className="text-left">
-                  <div className="font-semibold text-xl">Cash App</div>
-                  <div className="text-sm text-gray-400">
-                    {profile.cashAppCashtag ? `$${profile.cashAppCashtag}` : '$cashtag (e.g. johndoe)'}
-                  </div>
-                </div>
-              </div>
-              <Plus className="w-5 h-5 text-gray-400" />
+              <Plus className="absolute top-2 right-2 w-4 h-4 text-gray-500" />
+              <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center text-lg font-bold text-emerald-400">$</div>
+              <span className="font-semibold text-sm">Cash App</span>
+              <span className="text-xs text-gray-400 truncate w-full text-center">
+                {profile.cashAppCashtag ? `$${profile.cashAppCashtag}` : '$cashtag'}
+              </span>
             </button>
 
             <button
               onClick={() => handlePickChain('venmo')}
-              className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center justify-between transition-all hover:scale-[1.02]"
+              className="relative p-4 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] aspect-square min-h-0"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-sky-500/20 rounded-xl flex items-center justify-center text-2xl font-bold text-sky-400">V</div>
-                <div className="text-left">
-                  <div className="font-semibold text-xl">Venmo</div>
-                  <div className="text-sm text-gray-400">
-                    {profile.venmoUsername ? `@${profile.venmoUsername}` : 'username (e.g. johndoe)'}
-                  </div>
-                </div>
-              </div>
-              <Plus className="w-5 h-5 text-gray-400" />
+              <Plus className="absolute top-2 right-2 w-4 h-4 text-gray-500" />
+              <div className="w-10 h-10 bg-sky-500/20 rounded-lg flex items-center justify-center text-lg font-bold text-sky-400">V</div>
+              <span className="font-semibold text-sm">Venmo</span>
+              <span className="text-xs text-gray-400 truncate w-full text-center">
+                {profile.venmoUsername ? `@${profile.venmoUsername}` : 'username'}
+              </span>
             </button>
           </div>
 
           {hasAnyAddress && (
             <button
               onClick={() => setStep('review')}
-              className="w-full mt-8 py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-semibold transition-colors"
+              className="w-full mt-5 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-semibold text-sm transition-colors"
             >
               Review & Save
             </button>
