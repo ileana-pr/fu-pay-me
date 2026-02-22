@@ -1,33 +1,35 @@
 # 💰 Tip Me
 
-> A modern, multi-chain tipping application supporting cryptocurrency and fiat payments
+> **One QR code. All your payments.** Unify fiat and crypto in a single link—so vendors, creators, and anyone getting paid can make everyday life easier for everyone paying them.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-blue)](https://tip-me-ten.vercel.app)
 [![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite)](https://vitejs.dev/)
 
-## ✨ Features
+## ✨ What Tip Me Does
 
-- 🪙 **Multi-Chain Crypto Support**
-  - Ethereum (ETH & ERC-20 tokens)
-  - Solana (SOL & SPL tokens)
-  - Bitcoin (BTC via QR codes)
+**One profile, one QR code—every way you get paid.** No more handing out different links for Venmo, Cash App, and each crypto chain. Set your payment options once; anyone who scans your QR sees **all** of them in one place and pays with whatever they already use.
 
-- 💵 **Fiat Payment Methods**
+### Payment options (fiat + crypto in one place)
+
+- 💵 **Fiat (what most people use every day)**
   - Cash App
   - Venmo
   - Zelle
 
-- 🔗 **Wallet Integration**
-  - MetaMask, WalletConnect, and more for Ethereum
-  - Phantom, Solflare for Solana
-  - Mobile wallet support via WalletConnect
+- 🪙 **Crypto (all under the same QR)**
+  - Ethereum (ETH & ERC-20 tokens)
+  - Base (ETH & tokens on Base)
+  - Solana (SOL & SPL tokens)
+  - Bitcoin (BTC via QR)
 
-- 📱 **Mobile Optimized**
-  - Responsive design
-  - Deep linking for fiat apps
-  - QR code generation for Bitcoin
+### How it works for payers
+
+- **One scan** → one page with every option the recipient accepts
+- **Fiat**: tap and jump into Cash App, Venmo, or Zelle with details pre-filled
+- **Crypto**: connect wallet (MetaMask, Phantom, WalletConnect, etc.), choose amount, sign—no copy-pasting addresses
+- **Mobile-friendly**: responsive layout, deep links into payment apps, works from any phone camera
 
 ## 🚀 Quick Start
 
@@ -62,21 +64,22 @@ npm run dev:mobile
 
 Then open `http://YOUR_LOCAL_IP:5173` on your phone.
 
+**Why it matters:** Combining every payment option into a single QR benefits everyone—vendors and businesses get one link to print or share, and payers (crypto or not) get a simple, familiar flow. The goal is to make paying and getting paid easier and to onboard as many people as possible, without forcing anyone into one app or one chain.
+
 ## 🛠️ Tech Stack
 
 - **Frontend**: React 18 + TypeScript
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS
-- **Ethereum**: Wagmi + Viem
+- **Ethereum / Base**: Wagmi + Viem
 - **Solana**: @solana/wallet-adapter
-- **Bitcoin**: QR Code generation
+- **Bitcoin**: QR code generation
 
 ## 📚 Documentation
 
-All detailed documentation is available in the [`docs/`](./docs/) folder:
-
-- **[DEPLOY.md](./docs/DEPLOY.md)** - Deployment instructions for Vercel and other platforms
-- **[MOBILE_TESTING.md](./docs/MOBILE_TESTING.md)** - Guide for testing on mobile devices
+- **[docs/whitepaper.md](./docs/whitepaper.md)** - Full product vision: one QR for all payment methods (fiat + crypto)
+- **[docs/DEPLOY.md](./docs/DEPLOY.md)** - Deployment (e.g. Vercel)
+- **[docs/MOBILE_TESTING.md](./docs/MOBILE_TESTING.md)** - Testing on mobile devices
 
 ## 🎯 Available Scripts
 
