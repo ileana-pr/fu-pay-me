@@ -265,7 +265,11 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
           </button>
 
           <div className="text-center mb-10">
-            <div className="text-5xl mb-4">{selected.icon}</div>
+            {selected.chain === 'base' ? (
+              <div className="w-16 h-16 bg-blue-500 rounded-xl mx-auto mb-4" />
+            ) : (
+              <div className="text-5xl mb-4">{selected.icon}</div>
+            )}
             <h1 className="text-3xl font-bold mb-2">
               Pay with {selected.label}
             </h1>
@@ -338,7 +342,11 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
                 className="w-full p-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center gap-4 transition-all hover:scale-[1.02]"
               >
                 <div className={`w-14 h-14 bg-gradient-to-br ${c.gradient} rounded-xl flex items-center justify-center text-3xl`}>
-                  {c.icon}
+                  {c.chain === 'base' ? (
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg" />
+                  ) : (
+                    c.icon
+                  )}
                 </div>
                 <div className="text-left">
                   <div className="font-semibold text-xl">{c.label}</div>

@@ -195,7 +195,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
               className="relative p-4 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02] aspect-square min-h-0"
             >
               <Plus className="absolute top-2 right-2 w-4 h-4 text-gray-500" />
-              <div className="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center text-xl">⬡</div>
+              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center" />
               <span className="font-semibold text-sm">Base</span>
               <span className="text-xs text-gray-400 truncate w-full text-center">
                 {profile.baseAddress ? `${profile.baseAddress.slice(0, 8)}...` : 'ETH or .base'}
@@ -462,7 +462,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
           <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="text-xl">⬡</span>
+                <span className="inline-block w-5 h-5 bg-blue-500 rounded-md shrink-0" />
                 <span className="font-semibold">Base</span>
               </div>
               <div className="flex items-center gap-2">
