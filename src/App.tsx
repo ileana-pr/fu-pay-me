@@ -10,6 +10,7 @@ import HomePage from './components/HomePage';
 import ProfileCreation from './components/ProfileCreation';
 import ProfileView from './components/ProfileView';
 import { UserProfile } from './components/ProfileCreation';
+import { decodeProfileFromUrl } from './lib/profileUrl';
 
 const queryClient = new QueryClient();
 
@@ -37,9 +38,9 @@ function App() {
   // if we're on a payment page, show TipPage
   const path = window.location.pathname;
   if (path.startsWith('/tip/')) {
-    const encodedProfile = path.replace('/tip/', '');
+    const encodedProfile = path.replace(/^\/tip\//, '').split('/')[0];
     try {
-      const profile = JSON.parse(decodeURIComponent(encodedProfile));
+      const profile = decodeProfileFromUrl(encodedProfile);
       return (
         <WagmiProvider config={config}>
           <QueryClientProvider client={queryClient}>

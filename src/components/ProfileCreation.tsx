@@ -167,8 +167,8 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
           </button>
 
           <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold mb-2">Payment Addresses</h1>
-            <p className="text-gray-400">enter wallet addresses where you want to receive tips</p>
+            <h1 className="text-3xl font-bold mb-2">Payment methods</h1>
+            <p className="text-gray-400">add crypto wallets and fiat payment apps — works with apps from any country</p>
           </div>
 
           <div className="space-y-4">
@@ -420,8 +420,8 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
       <div className="max-w-lg mx-auto px-4 py-12">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold mb-2">Review Your Profile</h1>
-          <p className="text-gray-400">payment addresses where you'll receive tips</p>
+          <h1 className="text-3xl font-bold mb-2">Review your profile</h1>
+          <p className="text-gray-400">crypto & fiat — where you'll receive tips</p>
         </div>
 
         <div className="space-y-4 mb-8">

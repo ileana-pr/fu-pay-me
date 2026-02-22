@@ -18,10 +18,10 @@ export default function HomePage({ onCreateProfile, onViewProfile, hasProfile }:
             FU Pay Me
           </h1>
           <p className="text-xl text-gray-300 mb-2">
-            one QR code. instant crypto payments.
+            one QR code. crypto & fiat.
           </p>
           <p className="text-gray-500">
-            add your ETH & SOL addresses, share a QR code, get paid
+            add crypto wallets and any payment apps — one link, get paid anywhere
           </p>
         </div>
 
@@ -40,7 +40,7 @@ export default function HomePage({ onCreateProfile, onViewProfile, hasProfile }:
                 className="w-full p-4 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 rounded-xl flex items-center justify-center gap-2 text-gray-300 transition-colors"
               >
                 <Plus className="w-5 h-5" />
-                Edit Wallets
+                Edit payment methods
               </button>
             </>
           ) : (

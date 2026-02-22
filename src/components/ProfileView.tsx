@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, QrCode, Copy, Check, Pencil } from 'lucide-react';
 import QRCode from 'qrcode';
 import { UserProfile } from './ProfileCreation';
+import { encodeProfileForUrl } from '../lib/profileUrl';
 
 interface ProfileViewProps {
   profile: UserProfile;
@@ -14,10 +15,10 @@ export default function ProfileView({ profile, onBack, onEdit }: ProfileViewProp
   const [copied, setCopied] = useState<string | null>(null);
 
   const getProfileUrl = () =>
-    `${window.location.origin}/tip/${encodeURIComponent(JSON.stringify(profile))}`;
+    `${window.location.origin}/tip/${encodeProfileForUrl(profile)}`;
 
   useEffect(() => {
-    const url = `${window.location.origin}/tip/${encodeURIComponent(JSON.stringify(profile))}`;
+    const url = `${window.location.origin}/tip/${encodeProfileForUrl(profile)}`;
     const generateQR = async () => {
       try {
         const dataUrl = await QRCode.toDataURL(url, {
@@ -63,7 +64,7 @@ export default function ProfileView({ profile, onBack, onEdit }: ProfileViewProp
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
             Your FU Pay Me Code
           </h1>
-          <p className="text-gray-400">share this QR code to get paid</p>
+          <p className="text-gray-400">one link for crypto & fiat — share the QR to get paid</p>
         </div>
 
         {/* qr code — the star of the show */}
@@ -76,7 +77,7 @@ export default function ProfileView({ profile, onBack, onEdit }: ProfileViewProp
             )}
             <div className="flex items-center gap-2 text-gray-300 mb-4">
               <QrCode className="w-5 h-5" />
-              <span className="text-sm">scan to open payment page</span>
+              <span className="text-sm">scan to pay with crypto or any payment app</span>
             </div>
             <button
               onClick={() => copyToClipboard(getProfileUrl(), 'url')}

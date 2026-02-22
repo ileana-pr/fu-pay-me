@@ -302,7 +302,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
           <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
             FU Pay Me
           </h1>
-          <p className="text-xl text-gray-300">choose a payment method</p>
+          <p className="text-xl text-gray-300">pay with crypto or fiat</p>
         </div>
 
         {chains.length === 0 && !cashtag && !venmoUsername ? (
