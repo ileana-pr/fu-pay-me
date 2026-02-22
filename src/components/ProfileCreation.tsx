@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
-import { ArrowLeft, Plus, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Loader2, Trash2 } from 'lucide-react';
 
 // public client for ENS resolution (reads only, no wallet needed)
 const ensClient = createPublicClient({
@@ -132,6 +132,13 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
   };
 
   const handleFinalSave = () => onSave(profile);
+
+  const removePayment = (kind: 'ethereum' | 'base' | 'solana' | 'cashapp') => {
+    if (kind === 'ethereum') setProfile(p => ({ ...p, ethereumAddress: '' }));
+    else if (kind === 'base') setProfile(p => ({ ...p, baseAddress: '' }));
+    else if (kind === 'solana') setProfile(p => ({ ...p, solanaAddress: '' }));
+    else setProfile(p => ({ ...p, cashAppCashtag: '' }));
+  };
 
   const hasAnyAddress = profile.ethereumAddress || profile.baseAddress || profile.solanaAddress;
 
@@ -357,12 +364,23 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 <span className="text-xl">⟠</span>
                 <span className="font-semibold">Ethereum</span>
               </div>
-              <button
-                onClick={() => handlePickChain('ethereum')}
-                className="text-xs text-gray-500 hover:text-white transition-colors"
-              >
-                {profile.ethereumAddress ? 'Edit' : 'Add'}
-              </button>
+              <div className="flex items-center gap-2">
+                {profile.ethereumAddress && (
+                  <button
+                    onClick={() => removePayment('ethereum')}
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+                    title="Remove"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Remove
+                  </button>
+                )}
+                <button
+                  onClick={() => handlePickChain('ethereum')}
+                  className="text-xs text-gray-500 hover:text-white transition-colors"
+                >
+                  {profile.ethereumAddress ? 'Edit' : 'Add'}
+                </button>
+              </div>
             </div>
             {profile.ethereumAddress ? (
               <code className="text-cyan-400 text-sm break-all">{profile.ethereumAddress}</code>
@@ -382,12 +400,23 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 <span className="text-xl">⬡</span>
                 <span className="font-semibold">Base</span>
               </div>
-              <button
-                onClick={() => handlePickChain('base')}
-                className="text-xs text-gray-500 hover:text-white transition-colors"
-              >
-                {profile.baseAddress ? 'Edit' : 'Add'}
-              </button>
+              <div className="flex items-center gap-2">
+                {profile.baseAddress && (
+                  <button
+                    onClick={() => removePayment('base')}
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+                    title="Remove"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Remove
+                  </button>
+                )}
+                <button
+                  onClick={() => handlePickChain('base')}
+                  className="text-xs text-gray-500 hover:text-white transition-colors"
+                >
+                  {profile.baseAddress ? 'Edit' : 'Add'}
+                </button>
+              </div>
             </div>
             {profile.baseAddress ? (
               <code className="text-indigo-400 text-sm break-all">{profile.baseAddress}</code>
@@ -407,12 +436,23 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 <span className="text-xl">◎</span>
                 <span className="font-semibold">Solana</span>
               </div>
-              <button
-                onClick={() => handlePickChain('solana')}
-                className="text-xs text-gray-500 hover:text-white transition-colors"
-              >
-                {profile.solanaAddress ? 'Edit' : 'Add'}
-              </button>
+              <div className="flex items-center gap-2">
+                {profile.solanaAddress && (
+                  <button
+                    onClick={() => removePayment('solana')}
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+                    title="Remove"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Remove
+                  </button>
+                )}
+                <button
+                  onClick={() => handlePickChain('solana')}
+                  className="text-xs text-gray-500 hover:text-white transition-colors"
+                >
+                  {profile.solanaAddress ? 'Edit' : 'Add'}
+                </button>
+              </div>
             </div>
             {profile.solanaAddress ? (
               <code className="text-purple-400 text-sm break-all">{profile.solanaAddress}</code>
@@ -432,12 +472,23 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
                 <span className="text-xl font-bold text-emerald-400">$</span>
                 <span className="font-semibold">Cash App</span>
               </div>
-              <button
-                onClick={() => handlePickChain('cashapp')}
-                className="text-xs text-gray-500 hover:text-white transition-colors"
-              >
-                {profile.cashAppCashtag ? 'Edit' : 'Add'}
-              </button>
+              <div className="flex items-center gap-2">
+                {profile.cashAppCashtag && (
+                  <button
+                    onClick={() => removePayment('cashapp')}
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+                    title="Remove"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Remove
+                  </button>
+                )}
+                <button
+                  onClick={() => handlePickChain('cashapp')}
+                  className="text-xs text-gray-500 hover:text-white transition-colors"
+                >
+                  {profile.cashAppCashtag ? 'Edit' : 'Add'}
+                </button>
+              </div>
             </div>
             {profile.cashAppCashtag ? (
               <code className="text-emerald-400 text-sm">${profile.cashAppCashtag}</code>
