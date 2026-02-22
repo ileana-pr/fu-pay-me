@@ -366,7 +366,15 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
             >
               Home Base
             </a>
-            {' · ETH Denver 2026'}
+            {' · ETH Denver 2026 · '}
+            <a
+              href="https://x.com/adigitaltati"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              @adigitaltati
+            </a>
           </p>
         </div>
       </div>

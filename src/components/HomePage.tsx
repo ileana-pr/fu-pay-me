@@ -53,6 +53,29 @@ export default function HomePage({ onCreateProfile, onViewProfile, hasProfile }:
             </button>
           )}
         </div>
+
+        <div className="mt-12 text-center">
+          <p className="text-xs text-gray-500">
+            Made with <span className="text-blue-500">💙</span> for{' '}
+            <a
+              href="https://x.com/homebasedotlove"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:underline"
+            >
+              Home Base
+            </a>
+            {' · ETH Denver 2026 · '}
+            <a
+              href="https://x.com/adigitaltati"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:underline"
+            >
+              @adigitaltati
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
