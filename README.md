@@ -21,6 +21,10 @@ I was building the prototype so fast I didn’t have time to think of a name. *F
 
 **One profile, one QR code—every way you get paid.** No more handing out different links for Venmo, Cash App, and each crypto chain. You set your payment options once; anyone who scans your QR sees **all** of them in one place and pays with whatever they already use.
 
+**If you’re getting paid:** You come to the app and create a profile—sign up, add your ETH, SOL, BTC (and other chain) addresses, plus Cash App, Venmo, Zelle. The app gives you one QR for everything.
+
+**If someone’s paying you:** They scan your QR, see your payment page, pick fiat or crypto, and either get sent to the right app with details pre-filled or connect their wallet. After they pay, the app nudges them to make their own profile and QR so they can get paid the same way.
+
 ### Payment options (fiat + crypto in one place)
 
 - 💵 **Fiat (what most people use every day)** — Cash App, Venmo, Zelle
@@ -29,6 +33,8 @@ I was building the prototype so fast I didn’t have time to think of a name. *F
 ### For the person paying
 
 One scan → one page with every option you accept. Fiat: they tap and land in Cash App, Venmo, or Zelle with details pre-filled. Crypto: they connect their wallet (MetaMask, Phantom, WalletConnect, etc.), choose amount, sign—no copy-pasting addresses. Domain names (like ENS) make addresses friendlier, but you still have to type or spell them; scanning a QR is scan-and-go. Works on mobile, deep links into apps, and scans from any phone camera.
+
+The whole point: one QR so you don’t have to choose between fiat and crypto. Vendors get one link to print or share; payers get a simple flow. I’m focused on making paying and getting paid easier and onboarding as many people as possible—without locking anyone into one app or one chain.
 
 ## 🚀 Quick start
 
@@ -51,7 +57,6 @@ npm run dev:mobile
 
 Then open `http://YOUR_LOCAL_IP:5173` on your phone.
 
-The whole point: one QR so you don’t have to choose between fiat and crypto. Vendors get one link to print or share; payers get a simple flow. I’m focused on making paying and getting paid easier and onboarding as many people as possible—without locking anyone into one app or one chain.
 
 ## 🛠️ Tech stack
 
@@ -60,8 +65,6 @@ React 18 + TypeScript, Vite, Tailwind. Ethereum/Base via Wagmi + Viem, Solana vi
 ## 📚 Docs
 
 - **[Whitepaper](./docs/whitepaper.md)** — The full vision: one QR for all payment methods (fiat + crypto)
-- **[How it works](./docs/README.md)** — Quick flow: profile → QR → pay
-- **[Mobile testing](./MOBILE_TESTING.md)** — Run it on your phone
 
 ## 🎯 Scripts
 
@@ -95,6 +98,6 @@ Private and proprietary.
 
 ## 👤
 
-**Ileana Perez** — [@ileana-pr](https://github.com/ileana-pr)
+**Ileana Perez** — (https://linktr.ee/adigitaltati)
 
 Stars are always appreciated if you find it useful. 🖕😎
