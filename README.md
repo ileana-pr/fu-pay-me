@@ -9,11 +9,15 @@
 
 ## Backstory
 
-This app was built on the fly at Homebase Denver 2026. It was my fourth ETH Denver, and I had a clear goal: find a full-time gig in web3. After three years of studying, grinding, and building, my attitude was different from years past—when I’d been more like begging for opportunity. This time it was (respectfully) *FU Pay Me*.
+This app was built on the fly at [Home Base](https://x.com/homebasedotlove) Denver 2026. It was my fourth ETH Denver, and I had a clear goal: land a full-time role in web3. After three years of studying, grinding, and building, my attitude was different from years past—when I'd been closer to begging for opportunity. This time I had paid my dues, and it was *FU Pay Me*.
 
-I brought a handful of 3D-printed Ethereum keychains to sell for $10 USDC to help cover travel. Coordinating payment methods with so many people from different countries and on different chains and apps turned into a real hassle—and that quickly became an idea. I wanted my supporters to pay me quickly and without fuss, especially in a conference where everyone’s busy and on the run.
+I brought a handful of 3D-printed Ethereum keychains to sell for $10 USDC to help 
+cover travel. Coordinating payments with so many people from different countries, 
+chains, and apps turned into a real hassle—and that quickly became an idea. I wanted 
+my supporters to pay me quickly and without fuss, especially at a conference where 
+everyone's busy and on the run.
 
-I was building the prototype so fast I didn’t have time to think of a name. *FU Pay Me* was still the only thing on my mind, so I used it as a temporary placeholder. To my surprise, everyone—including Jesse—loved it. So here we are. I hope you find it a useful little tool, and remember to always say FU Pay Me … followed with a smile.
+I was building the prototype so fast I didn't have time to think of a name. So I used *FU Pay Me* as a temporary placeholder. To my surprise, the other devs at Home Base loved it—and so did [Jesse](https://x.com/jessepollak) himself. So here we are. I hope you find it a useful little tool, and remember, know your worth... and have the confidence to say **respectfully** FU Pay Me, followed with a smile.
 
 ---
 
@@ -35,6 +39,10 @@ I was building the prototype so fast I didn’t have time to think of a name. *F
 One scan → one page with every option you accept. Fiat: they tap and land in Cash App, Venmo, or Zelle with details pre-filled. Crypto: they connect their wallet (MetaMask, Phantom, WalletConnect, etc.), choose amount, sign—no copy-pasting addresses. Domain names (like ENS) make addresses friendlier, but you still have to type or spell them; scanning a QR is scan-and-go. Works on mobile, deep links into apps, and scans from any phone camera.
 
 The whole point: one QR so you don’t have to choose between fiat and crypto. Vendors get one link to print or share; payers get a simple flow. I’m focused on making paying and getting paid easier and onboarding as many people as possible—without locking anyone into one app or one chain.
+
+## 📚 Docs
+
+- **[Whitepaper](./docs/whitepaper.md)** — The full vision: one QR for all payment methods (fiat + crypto)
 
 ## 🚀 Quick start
 
@@ -61,10 +69,6 @@ Then open `http://YOUR_LOCAL_IP:5173` on your phone.
 ## 🛠️ Tech stack
 
 React 18 + TypeScript, Vite, Tailwind. Ethereum/Base via Wagmi + Viem, Solana via @solana/wallet-adapter, Bitcoin QR generation. Nothing fancy—just stuff that works.
-
-## 📚 Docs
-
-- **[Whitepaper](./docs/whitepaper.md)** — The full vision: one QR for all payment methods (fiat + crypto)
 
 ## 🎯 Scripts
 
