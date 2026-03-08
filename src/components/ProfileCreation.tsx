@@ -78,11 +78,11 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     setResolveError(null);
 
     try {
-      // .base and .base.eth: use basename API (avoids mainnet ENS timeout for Base subdomains)
+      // .base and .base.eth: use proxy (avoids CORS — api.basename.app blocks direct browser requests)
       if (domain.endsWith('.base.eth') || domain.endsWith('.base') || domain.includes('.base')) {
         const name = domain.replace(/\.base\.eth$/i, '').replace(/\.base$/i, '').trim();
         if (!name) throw new Error('invalid .base name');
-        const res = await fetch(`https://api.basename.app/v1/names/${encodeURIComponent(name)}`);
+        const res = await fetch(`/api/basename/${encodeURIComponent(name)}`);
         if (!res.ok) throw new Error('could not resolve .base name');
         const data = await res.json();
         const addr = data?.address ?? data?.owner ?? data?.eth_address;

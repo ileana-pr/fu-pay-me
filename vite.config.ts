@@ -27,5 +27,13 @@ export default defineConfig({
     host: '0.0.0.0', // allow access from network
     port: 5173,
     strictPort: false,
+    // proxy basename API to avoid CORS (api.basename.app blocks browser requests)
+    proxy: {
+      '/api/basename': {
+        target: 'https://api.basename.app',
+        changeOrigin: true,
+        rewrite: (path) => '/v1/names' + path.replace(/^\/api\/basename/, ''),
+      },
+    },
   },
 });
