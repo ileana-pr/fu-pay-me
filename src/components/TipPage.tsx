@@ -114,7 +114,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
             <ExternalLink className="w-5 h-5" />
             Open in Wallet
           </a>
-          <p className="text-center text-sm piri-muted mt-4">Piri opens your Bitcoin wallet with this address</p>
+          <p className="text-center text-sm piri-muted mt-4">If nothing opens, your device has no Bitcoin app set for links. Use <strong>Copy Address</strong> above and paste into Phantom, Sparrow, or any BTC wallet.</p>
         </div>
       </div>
     );
