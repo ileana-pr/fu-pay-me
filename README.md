@@ -1,15 +1,19 @@
 <div align="center">
-  <img src="public/og-image.png" alt="Piri" width="500" />
+  <img src="./public/og-image.png" alt="Piri Pay" width="500" />
 </div>
-
-<div align="center" style="font-family: system-ui, sans-serif; color: #2D0A00; background: #FFFBF2; padding: 0.75rem 1.5rem; border-radius: 0.75rem; margin: 0.5rem 0; border: 2px solid #2D0A00;">
-  <span style="opacity: 0.85; font-weight: bold;">One QR code, every way to pay—unify fiat and crypto in a single link.</span>
-</div>
-
-# 🍧 Piri
 
 <div align="center">
-  <a href="https://piri.vercel.app" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.8rem 1.5rem; font-size: 1.1rem; font-weight: bold; color: #fff; background: #10B981; border-radius: 0.8rem; text-decoration: none; margin-bottom: .3rem; margin-top: 2rem;">▶ Try the live demo</a>
+
+**One QR code, every way to pay—unify fiat and crypto in a single link.**
+
+</div>
+
+# Piri Pay
+
+<div align="center">
+
+> 🍧 **[▶ Try the live demo](https://piri.vercel.app)** — *Pick your flavor. Get your money.* 🍧
+
 </div>
 
 ## 📚 Docs
