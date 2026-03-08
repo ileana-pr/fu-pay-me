@@ -4,10 +4,6 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/x-piri-brand",
-      "destination": "/x-piri-brand.html"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

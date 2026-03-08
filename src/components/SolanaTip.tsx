@@ -38,19 +38,20 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
   }, []);
   const { connection } = useConnection();
 
-  // Detect Solana network from endpoint
+  // must match solanaConfig default
+  const defaultEndpoint = 'https://solana-rpc.publicnode.com';
   const solanaNetwork = useMemo(() => {
-    const endpoint = import.meta.env.VITE_SOLANA_ENDPOINT || 'https://api.devnet.solana.com';
+    const endpoint = import.meta.env.VITE_SOLANA_ENDPOINT || defaultEndpoint;
     if (endpoint.includes('devnet')) return 'Devnet (Testnet)';
     if (endpoint.includes('testnet')) return 'Testnet';
-    if (endpoint.includes('mainnet')) return 'Mainnet';
-    return 'Unknown';
+    if (endpoint.includes('mainnet') || endpoint.includes('publicnode')) return 'Mainnet';
+    return 'Mainnet';
   }, []);
 
   // Generate explorer URL
   const explorerUrl = useMemo(() => {
     if (!solHash) return null;
-    const endpoint = import.meta.env.VITE_SOLANA_ENDPOINT || 'https://api.devnet.solana.com';
+    const endpoint = import.meta.env.VITE_SOLANA_ENDPOINT || defaultEndpoint;
     if (endpoint.includes('devnet')) {
       return `https://explorer.solana.com/tx/${solHash}?cluster=devnet`;
     }
