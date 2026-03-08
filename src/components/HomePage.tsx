@@ -6,8 +6,8 @@ interface HomePageProps {
   hasProfile: boolean;
 }
 
-// logo: Piri character image at public/og-image.png (required for home hero)
-const LOGO_SRC = '/og-image.png';
+// logo: Piri character at public/logo/piri.png (home hero)
+const LOGO_SRC = '/logo/piri.png';
 
 export default function HomePage({ onCreateProfile, onViewProfile, hasProfile }: HomePageProps) {
   return (

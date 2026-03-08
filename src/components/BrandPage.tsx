@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const MASCOT = '/og-image.png';
+const MASCOT = '/logo/piri.png';
 
 const FLAVORS = [
   { name: 'Fresa', color: '#FF6B9D', emoji: '🩷', method: 'Cash App', hex: '#FF6B9D' },

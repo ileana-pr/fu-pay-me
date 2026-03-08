@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./public/og-image.png" alt="Piri Pay" width="500" />
+  <img src="public/og-image.png" alt="Piri Pay" width="500" />
 </div>
 
 <div align="center">

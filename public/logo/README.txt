@@ -1,4 +1,6 @@
-Place your Piri mascot image at public/og-image.png for the app and README (home hero, brand page, og/twitter). Optional: also put a copy here as piri.png if you want /logo/piri.png to work.
+Logo (mascot): put your Piri image here as piri.png. Used on home hero, brand page, and README.
+
+OG/social preview: use public/og-image.png for meta og:image and twitter:image (index.html).
 
 Chain/payment logos (for tiles and tip flows): use images with Piri branding (e.g. tinted to
 --piri-text #2D0A00 or --piri-fresa #FF6B9D). Name them and place in this folder:
