@@ -19,7 +19,7 @@
 ## 📚 Docs
 
 - [Whitepaper](./docs/whitepaper.md) — Vision and scope
-- [Pitch deck](https://docs.google.com/presentation/d/1kJRNfmxq34ETlp5K4XRwvQBAp-Hb-KEN/edit?usp=sharing&ouid=114728018986311301124&rtpof=true&sd=true) *(WIP)*
+- [Pitch deck](https://docs.google.com/presentation/d/1kJRNfmxq34ETlp5K4XRwvQBAp-Hb-KEN/edit?usp=sharing&ouid=114728018986311301124&rtpof=true&sd=true)
 
 ## ✨ What it does
 
