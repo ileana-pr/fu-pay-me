@@ -1,0 +1,86 @@
+name: Bug report
+description: Report something that isn’t working (device, steps, expected vs actual).
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. The more detail you add, the faster we can reproduce and fix it.
+
+  - type: textarea
+    id: device
+    attributes:
+      label: Device & environment
+      description: Phone/tablet/desktop, OS version, browser or in-app browser if relevant.
+      placeholder: |
+        e.g. Samsung Galaxy S21 Ultra, Android 14, Chrome
+        e.g. iPhone 15, iOS 17, Safari
+        e.g. Windows 11, Chrome 120
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Short summary of the bug—what you were doing when it broke.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior (optional)
+      description: If different from above, describe what you saw (error message, blank screen, etc.).
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps so we can follow the same path.
+      placeholder: |
+        1. Go to …
+        2. Tap …
+        3. …
+    validations:
+      required: false
+
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots / photos / video
+      description: Drag images into a comment after submitting, or paste links (GitHub uploads, Loom, etc.).
+      placeholder: |
+        After you submit, add screenshots in a comment, or paste links here:
+        - https://…
+    validations:
+      required: false
+
+  - type: input
+    id: url
+    attributes:
+      label: Page URL (optional)
+      description: If the bug is on a specific tip/profile URL, paste it here.
+      placeholder: https://piri-pay.vercel.app/tip/...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirm
+      options:
+        - label: I’ve searched existing issues and this doesn’t duplicate an open bug.
+          required: false

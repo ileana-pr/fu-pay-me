@@ -1,0 +1,7 @@
+# optional: set to true to require using a template (no blank issues)
+blank_issues_enabled: true
+
+contact_links:
+  - name: Piri Pay repo
+    url: https://github.com/ileana-pr/piri-pay
+    about: Main app repo — open bugs here.
