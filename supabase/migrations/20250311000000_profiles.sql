@@ -1,5 +1,5 @@
 -- piri profiles table — payment methods for tip links
--- run in Supabase Dashboard → SQL Editor, or: supabase db push
+-- applied via: supabase db push
 
 create table if not exists public.profiles (
   id text primary key,

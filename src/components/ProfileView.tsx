@@ -1,8 +1,16 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, QrCode, Copy, Check, Pencil } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, QrCode, Copy, Check, Pencil, Download, Loader2 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { UserProfile } from './ProfileCreation';
 import { encodeProfileForUrl } from '../lib/profileUrl';
+import {
+  prepareShareImageExport,
+  downloadShareBlob,
+  formatFileSize,
+  SHARE_IMAGE_PRESETS,
+  type ShareImageExport,
+  type ShareImageTheme,
+} from '../lib/shareImage';
 
 interface ProfileViewProps {
   profile: UserProfile;
@@ -13,6 +21,12 @@ interface ProfileViewProps {
 export default function ProfileView({ profile, onBack, onEdit }: ProfileViewProps) {
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
+  const [shareExport, setShareExport] = useState<ShareImageExport | null>(null);
+  const [sharePanelOpen, setSharePanelOpen] = useState(false);
+  const [shareLoadingDimension, setShareLoadingDimension] = useState<number | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [shareTheme, setShareTheme] = useState<ShareImageTheme>('light');
+  const previewUrlRef = useRef<string | null>(null);
 
   const getProfileUrl = () =>
     `${window.location.origin}/tip/${encodeProfileForUrl(profile)}`;
@@ -33,6 +47,34 @@ export default function ProfileView({ profile, onBack, onEdit }: ProfileViewProp
     };
     generateQR();
   }, [profile]);
+
+  const loadShareExportForDimension = async (dimension: number, themeOverride?: ShareImageTheme) => {
+    const theme = themeOverride ?? shareTheme;
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    setShareError(null);
+    setShareLoadingDimension(dimension);
+    try {
+      const data = await prepareShareImageExport(getProfileUrl(), dimension, theme);
+      setShareExport(data);
+      previewUrlRef.current = URL.createObjectURL(data.png.blob);
+    } catch (e) {
+      setShareError(e instanceof Error ? e.message : 'could not prepare image');
+    } finally {
+      setShareLoadingDimension(null);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+    };
+  }, []);
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -70,12 +112,163 @@ export default function ProfileView({ profile, onBack, onEdit }: ProfileViewProp
               <QrCode className="w-5 h-5" />
               <span className="text-sm font-semibold">scan to pay — crypto or any payment app</span>
             </div>
-            <button
-              onClick={() => copyToClipboard(getProfileUrl(), 'url')}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm piri-btn-primary"
-            >
-              {copied === 'url' ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Link</>}
-            </button>
+            <div className="flex flex-col items-center gap-3 w-full">
+              <button
+                onClick={() => copyToClipboard(getProfileUrl(), 'url')}
+                className="flex items-center gap-2 px-5 py-2.5 text-sm piri-btn-primary"
+              >
+                {copied === 'url' ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Link</>}
+              </button>
+
+              {/* export: pick dimensions first, then see file sizes, then format */}
+              {!sharePanelOpen && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSharePanelOpen(true);
+                    setShareError(null);
+                  }}
+                  className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-piri text-piri bg-white hover:opacity-90 transition-opacity"
+                >
+                  <Download className="w-4 h-4" /> Download image
+                </button>
+              )}
+              {sharePanelOpen && (
+                <div className="w-full max-w-sm rounded-xl border-2 border-piri/20 bg-white/80 p-4 text-left">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-bold piri-muted uppercase tracking-wider">image size</p>
+                    <button
+                      type="button"
+                      className="text-xs font-bold text-piri hover:opacity-80"
+                      onClick={() => {
+                        setSharePanelOpen(false);
+                        setShareExport(null);
+                        setShareError(null);
+                        if (previewUrlRef.current) {
+                          URL.revokeObjectURL(previewUrlRef.current);
+                          previewUrlRef.current = null;
+                        }
+                      }}
+                    >
+                      close
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs font-bold piri-muted uppercase tracking-wider">theme</span>
+                    <div className="flex rounded-lg border-2 border-piri/20 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShareTheme('light');
+                          if (shareExport) loadShareExportForDimension(shareExport.dimension, 'light');
+                        }}
+                        className={`px-3 py-1.5 text-xs font-bold transition-colors ${shareTheme === 'light' ? 'bg-piri text-white' : 'bg-white text-piri hover:bg-piri/10'}`}
+                      >
+                        Light
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShareTheme('dark');
+                          if (shareExport) loadShareExportForDimension(shareExport.dimension, 'dark');
+                        }}
+                        className={`px-3 py-1.5 text-xs font-bold transition-colors ${shareTheme === 'dark' ? 'bg-piri text-white' : 'bg-white text-piri hover:bg-piri/10'}`}
+                      >
+                        Dark
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs piri-muted mb-3">smaller dimensions = smaller files. pick one, then choose PNG or JPEG.</p>
+                  <div className="flex flex-col gap-2 mb-4">
+                    {SHARE_IMAGE_PRESETS.map((p) => {
+                      const loading = shareLoadingDimension === p.size;
+                      const selected = shareExport?.dimension === p.size;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          disabled={loading}
+                          onClick={() => loadShareExportForDimension(p.size)}
+                          className={`flex items-center justify-between rounded-lg border-2 px-3 py-2 text-left transition-colors ${
+                            selected
+                              ? 'border-piri-cashapp bg-piri-cream/50'
+                              : 'border-piri/15 bg-white hover:border-piri/30'
+                          }`}
+                        >
+                          <span>
+                            <span className="font-bold text-piri text-sm">{p.label}</span>
+                            <span className="block text-xs piri-muted">{p.hint}</span>
+                          </span>
+                          {loading && <Loader2 className="w-4 h-4 shrink-0 animate-spin text-piri" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {shareError && (
+                    <p className="text-sm font-semibold text-red-600 mb-3">{shareError}</p>
+                  )}
+                  {shareExport && (
+                    <>
+                      <p className="text-xs font-bold piri-muted uppercase tracking-wider mb-2">
+                        preview
+                      </p>
+                      <div className="mb-4 rounded-xl overflow-hidden border-2 border-piri/20 bg-piri-bg flex justify-center">
+                        {previewUrlRef.current && (
+                          <img
+                            src={previewUrlRef.current}
+                            alt="Share image preview"
+                            className="max-w-full w-full max-h-[320px] object-contain"
+                          />
+                        )}
+                      </div>
+                      <p className="text-xs font-bold piri-muted uppercase tracking-wider mb-2">
+                        download ({shareExport.dimension} px)
+                      </p>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div>
+                            <span className="font-bold text-piri">PNG</span>
+                            <span className="text-sm piri-muted ml-2">{formatFileSize(shareExport.png.bytes)}</span>
+                            {shareExport.png.overRecommendedMax && (
+                              <span className="block text-xs text-amber-700 font-semibold mt-0.5">
+                                over 1 MB — try JPEG or a smaller size above
+                              </span>
+                            )}
+                            <span className="block text-xs piri-muted">lossless, sharpest QR</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => downloadShareBlob(shareExport.png.blob, shareExport.png.filename)}
+                            className="shrink-0 px-3 py-2 text-xs font-bold piri-btn-primary rounded-lg"
+                          >
+                            Download
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 flex-wrap border-t border-piri/10 pt-3">
+                          <div>
+                            <span className="font-bold text-piri">JPEG</span>
+                            <span className="text-sm piri-muted ml-2">{formatFileSize(shareExport.jpeg.bytes)}</span>
+                            {shareExport.jpeg.overRecommendedMax && (
+                              <span className="block text-xs text-amber-700 font-semibold mt-0.5">
+                                over 1 MB — pick a smaller size above
+                              </span>
+                            )}
+                            <span className="block text-xs piri-muted">smaller file, still scannable</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => downloadShareBlob(shareExport.jpeg.blob, shareExport.jpeg.filename)}
+                            className="shrink-0 px-3 py-2 text-xs font-bold piri-btn-primary rounded-lg"
+                          >
+                            Download
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
