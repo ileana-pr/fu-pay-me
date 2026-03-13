@@ -7,10 +7,9 @@ set -e
 echo "=== Piri Supabase Setup ==="
 echo ""
 
-# 1. Login (opens browser for token)
+# 1. Login
 echo "Step 1: Log in to Supabase"
-echo "  → Run: npx supabase login"
-echo "  → Get token from: https://supabase.com/dashboard/account/tokens"
+echo "  Token: https://supabase.com/dashboard/account/tokens"
 echo ""
 read -p "Have you logged in? (y/n) " -n 1 -r
 echo

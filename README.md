@@ -65,6 +65,27 @@ React 18, TypeScript, Vite, Tailwind. Ethereum/Base: Wagmi + Viem. Solana: @sola
 | `npm run preview` | Preview the build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript check |
+| `npm run supabase:setup` | Interactive Supabase project setup (CLI) |
+| `npm run supabase:login` | Log in to Supabase |
+| `npm run supabase:link` | Link to a Supabase project |
+| `npm run supabase:db` | Push migrations to linked project |
+| `npm run supabase:start` | Start local Supabase (Docker) |
+
+## 🗄️ Supabase (profile API)
+
+Stable tip links require a Supabase project. Set up via CLI:
+
+```bash
+npm run supabase:setup
+```
+
+Or manually: `supabase login` → create project at [dashboard](https://supabase.com/dashboard) → `supabase link --project-ref <id>` → `supabase db push`.
+
+Add to `.env`:
+```
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<from dashboard → Settings → API>
+```
 
 ## 🌐 Env vars
 
@@ -79,6 +100,10 @@ VITE_WALLETCONNECT_PROJECT_ID=
 VITE_CASHAPP_HANDLE=
 VITE_VENMO_HANDLE=
 VITE_ZELLE_HANDLE=
+
+# profile api (stable links)
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 ## 📝 License

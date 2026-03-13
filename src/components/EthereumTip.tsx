@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAccount, useConnect, useDisconnect, useWaitForTransactionReceipt, useWriteContract, useBalance } from 'wagmi';
 
-import { useConnectModal } from '@rainbow-me/rainbowkit';
+import ConnectChoice from './ConnectChoice';
 import { mainnet } from 'wagmi/chains';
 import type { EIP1193Provider } from 'viem';
 import { parseEther, parseUnits, erc20Abi, Address } from 'viem';
@@ -12,9 +12,10 @@ import ChainLogo from './ChainLogo';
 interface EthereumTipProps {
   onBack: () => void;
   receivingAddress: string;
+  hasPrivy?: boolean;
 }
 
-export default function EthereumTip({ onBack, receivingAddress }: EthereumTipProps) {
+export default function EthereumTip({ onBack, receivingAddress, hasPrivy = false }: EthereumTipProps) {
   const [selectedToken, setSelectedToken] = useState<TokenConfig | null>(null);
   const [amount, setAmount] = useState('');
   const [showWalletSelector, setShowWalletSelector] = useState(false);
@@ -25,7 +26,6 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
   const { address: ethAddress, isConnected: isEthConnected, chain } = useAccount();
   const { error: connectError, isPending: isConnecting } = useConnect();
   const { disconnect: disconnectEth } = useDisconnect();
-  const { openConnectModal } = useConnectModal();
   
   const expectedChain = mainnet;
   
@@ -577,27 +577,15 @@ export default function EthereumTip({ onBack, receivingAddress }: EthereumTipPro
                 </div>
               )}
 
-              {/* Wallet selector — RainbowKit modal (injected + WalletConnect, list from package not API) */}
+              {/* Wallet selector — Privy or Connect wallet */}
               {showWalletSelector && !isEthConnected && (
                 <div className="space-y-4 p-6 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border-2 border-cyan-500/30 shadow-2xl backdrop-blur-sm">
                   <div className="text-center mb-6">
                     <div className="text-4xl mb-2">👛</div>
-                    <p className="text-lg font-bold text-white">Connect Your Wallet</p>
+                    <p className="text-lg font-bold text-white">Connect to send</p>
+                    <p className="text-sm text-gray-400 mt-1">choose Privy (new to crypto) or your wallet</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => openConnectModal?.()}
-                    disabled={isConnecting}
-                    className="w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:from-blue-600 hover:via-cyan-600 hover:to-blue-700 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/50 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="text-2xl">🔗</span>
-                    <span>Connect wallet</span>
-                    {isConnecting ? (
-                      <span className="text-xs opacity-90">⏳ Connecting...</span>
-                    ) : (
-                      <span className="text-xs opacity-90">📱 Tap to open wallet</span>
-                    )}
-                  </button>
+                  <ConnectChoice hasPrivy={hasPrivy} variant="compact" isConnecting={isConnecting} />
                   <button
                     onClick={() => setShowWalletSelector(false)}
                     className="w-full py-2 px-4 text-gray-400 hover:text-white text-sm transition-colors rounded-lg hover:bg-slate-700/50"

@@ -20,7 +20,7 @@ interface ChainOption {
   btnClass: string;
 }
 
-export default function TipPage({ profile }: { profile: UserProfile }) {
+export default function TipPage({ profile, hasPrivy = false }: { profile: UserProfile; hasPrivy?: boolean }) {
   const [selectedChain, setSelectedChain] = useState<PaymentMethod | null>(null);
   const [view, setView] = useState<View>('menu');
   const [copied, setCopied] = useState(false);
@@ -80,6 +80,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
       <EthereumTip
         onBack={() => setView('detail')}
         receivingAddress={profile.ethereumAddress}
+        hasPrivy={hasPrivy}
       />
     );
   }
@@ -88,6 +89,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
       <BaseTip
         onBack={() => setView('detail')}
         receivingAddress={baseAddress}
+        hasPrivy={hasPrivy}
       />
     );
   }

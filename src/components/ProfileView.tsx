@@ -28,11 +28,16 @@ export default function ProfileView({ profile, onBack, onEdit }: ProfileViewProp
   const [shareTheme, setShareTheme] = useState<ShareImageTheme>('light');
   const previewUrlRef = useRef<string | null>(null);
 
+  // stable link when we have id — updates reflect without reshare; else legacy encoded URL
   const getProfileUrl = () =>
-    `${window.location.origin}/tip/${encodeProfileForUrl(profile)}`;
+    profile.id
+      ? `${window.location.origin}/tip/${profile.id}`
+      : `${window.location.origin}/tip/${encodeProfileForUrl(profile)}`;
 
   useEffect(() => {
-    const url = `${window.location.origin}/tip/${encodeProfileForUrl(profile)}`;
+    const url = profile.id
+      ? `${window.location.origin}/tip/${profile.id}`
+      : `${window.location.origin}/tip/${encodeProfileForUrl(profile)}`;
     const generateQR = async () => {
       try {
         const dataUrl = await QRCode.toDataURL(url, {
@@ -112,6 +117,9 @@ export default function ProfileView({ profile, onBack, onEdit }: ProfileViewProp
               <QrCode className="w-5 h-5" />
               <span className="text-sm font-semibold">scan to pay — crypto or any payment app</span>
             </div>
+            {profile.id && (
+              <p className="text-xs piri-muted mb-2 text-center">your link stays the same when you edit — no need to reshare</p>
+            )}
             <div className="flex flex-col items-center gap-3 w-full">
               <button
                 onClick={() => copyToClipboard(getProfileUrl(), 'url')}

@@ -13,6 +13,8 @@ const ensClient = createPublicClient({
 
 // simplified profile — payment addresses for receiving tips
 export interface UserProfile {
+  /** stable id from backend; when set, link is /tip/:id and updates reflect without reshare */
+  id?: string;
   ethereumAddress: string;
   /** base payment address (or .base name); optional for backward compatibility */
   baseAddress?: string;
@@ -30,7 +32,7 @@ export interface UserProfile {
 }
 
 interface ProfileCreationProps {
-  onSave: (profile: UserProfile) => void;
+  onSave: (profile: UserProfile) => void | Promise<void>;
   onBack: () => void;
   initialProfile?: UserProfile | null;
 }
@@ -40,6 +42,7 @@ type Step = 'chains' | 'manual' | 'review';
 export default function ProfileCreation({ onSave, onBack, initialProfile }: ProfileCreationProps) {
   const [step, setStep] = useState<Step>('chains');
   const [profile, setProfile] = useState<UserProfile>({
+    id: initialProfile?.id,
     ethereumAddress: initialProfile?.ethereumAddress ?? '',
     baseAddress: initialProfile?.baseAddress ?? '',
     bitcoinAddress: initialProfile?.bitcoinAddress ?? '',
@@ -54,6 +57,7 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
   const [isResolving, setIsResolving] = useState(false);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const getAddressForChain = (chain: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal') =>
     chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ?? '') : chain === 'venmo' ? (profile.venmoUsername ?? '') : chain === 'zelle' ? (profile.zelleContact ?? '') : (profile.paypalUsername ?? '');
@@ -205,7 +209,14 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
     setStep('review');
   };
 
-  const handleFinalSave = () => onSave(profile);
+  const handleFinalSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(profile);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const removePayment = (kind: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal') => {
     if (kind === 'ethereum') setProfile(p => ({ ...p, ethereumAddress: '' }));
@@ -515,8 +526,8 @@ export default function ProfileCreation({ onSave, onBack, initialProfile }: Prof
             </div>
           </div>
         </div>
-        <button onClick={handleFinalSave} disabled={!hasAnyAddress} className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 piri-btn-primary disabled:opacity-40">
-          <Save className="w-5 h-5" /> Save & Generate QR Code
+        <button onClick={handleFinalSave} disabled={!hasAnyAddress || isSaving} className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 piri-btn-primary disabled:opacity-40">
+          {isSaving ? <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</> : <><Save className="w-5 h-5" /> Save & Generate QR Code</>}
         </button>
         {!hasAnyAddress && <p className="text-center text-sm piri-muted font-semibold mt-4">add at least one to continue</p>}
         <div className="mt-12 text-center">

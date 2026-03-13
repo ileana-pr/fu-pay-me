@@ -29,6 +29,11 @@ export function encodeProfileForUrl(profile: UserProfile): string {
   return encodeURIComponent(JSON.stringify(compact));
 }
 
+/** segment looks like stable id (nanoid) vs encoded JSON */
+export function isProfileId(segment: string): boolean {
+  return segment.length >= 8 && segment.length <= 32 && /^[a-zA-Z0-9_-]+$/.test(segment) && !segment.startsWith('%');
+}
+
 /** decode /tip/... segment to UserProfile; supports old long-key URLs */
 export function decodeProfileFromUrl(encoded: string): UserProfile {
   const raw = decodeURIComponent(encoded);
