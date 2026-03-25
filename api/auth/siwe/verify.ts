@@ -1,7 +1,9 @@
 import { config } from 'dotenv';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import { getAddress, verifyMessage } from 'viem';
+import { createPublicClient, http, getAddress } from 'viem';
+import { base, mainnet } from 'viem/chains';
+import { verifySiweMessage } from 'viem/siwe';
 import { parseSiweMessage, validateSiweMessage } from 'viem/siwe';
 import { nanoid } from 'nanoid';
 
@@ -97,11 +99,18 @@ export async function POST(request: Request) {
 
     await supabase.from('siwe_nonces').delete().eq('nonce', nonce);
 
-    // verify signature
-    const isValidSig = await verifyMessage({
-      address: parsed.address as `0x${string}`,
+    // verify signature — use public client (supports EOA + smart contract wallets via EIP-1271)
+    const chainId = Number(parsed.chainId);
+    const publicClient = createPublicClient({
+      chain: chainId === 8453 ? base : mainnet,
+      transport: http(),
+    });
+    const isValidSig = await verifySiweMessage(publicClient, {
       message,
       signature: signature as `0x${string}`,
+      domain,
+      nonce,
+      time: new Date(),
     });
     if (!isValidSig) {
       return Response.json({ error: 'Invalid signature' }, { status: 401 });

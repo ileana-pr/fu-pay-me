@@ -14,6 +14,7 @@ import SignInPage from './components/SignInPage';
 import { UserProfile } from './components/ProfileCreation';
 import BrandPage from './components/BrandPage';
 import GettingStartedPage from './components/GettingStartedPage';
+import WhitepaperPage from './components/WhitepaperPage';
 import { createProfile, updateProfile, fetchProfileBySession } from './lib/profileApi';
 import { signInWithSiwe } from './lib/siweAuth';
 import { supabase } from './lib/supabase';
@@ -23,6 +24,7 @@ const queryClient = new QueryClient();
 // secret brand page — no links from main site; access via /x-piri-brand
 const BRAND_PATH = '/x-piri-brand';
 const GETTING_STARTED_PATH = '/getting-started';
+const WHITEPAPER_PATH = '/whitepaper';
 
 type Page = 'home' | 'create' | 'view' | 'signIn';
 
@@ -250,6 +252,9 @@ function App() {
   }
   if (path === GETTING_STARTED_PATH) {
     return <GettingStartedPage />;
+  }
+  if (path === WHITEPAPER_PATH) {
+    return <WhitepaperPage />;
   }
 
   const appContent = path.startsWith('/tip/') ? (

@@ -66,7 +66,7 @@ Go to the app (e.g. **piri-pay.vercel.app**). Create an account with your email 
 
 ## 🆘 Something not working?
 
-Use **[Report a bug](./REPORT_A_BUG.md)** — one short form, we’ll take it from there.
+Use **[Report a bug](https://forms.gle/DEr8KYcXPKkSomUf7)** — one short form, we’ll take it from there.
 
 ---
 
@@ -74,4 +74,4 @@ Use **[Report a bug](./REPORT_A_BUG.md)** — one short form, we’ll take it fr
 
 - **Live app:** [piri-pay.vercel.app](https://piri-pay.vercel.app)
 - **Whitepaper:** [Vision and how it works](./whitepaper.md)
-- **Report a bug:** [Tell us what went wrong](./REPORT_A_BUG.md)
+- **Report a bug:** [Tell us what went wrong](https://forms.gle/DEr8KYcXPKkSomUf7)

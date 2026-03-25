@@ -210,7 +210,7 @@ export default function GettingStartedPage() {
             Use <strong>Report a bug</strong> — one short form, we&apos;ll take it from there.
           </p>
           <a
-            href="/report-a-bug"
+            href="https://forms.gle/DEr8KYcXPKkSomUf7"
             className="inline-block px-4 py-2 rounded-xl font-bold text-white transition-opacity hover:opacity-90"
             style={{ background: '#FF6B9D' }}
           >
