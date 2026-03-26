@@ -3,7 +3,7 @@ import { logClientError, profileHttpUserMessage } from '../lib/userFacingErrors'
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
-import { ArrowLeft, Plus, Save, Loader2, Trash2, LogOut, Wallet } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Trash2, LogOut, Wallet } from 'lucide-react';
 import ChainLogo from './ChainLogo';
 
 // public client for ENS resolution (reads only, no wallet needed)
@@ -307,7 +307,6 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
               const label = chain === 'ethereum' ? 'Ethereum' : chain === 'base' ? 'Base' : chain === 'bitcoin' ? 'Bitcoin' : chain === 'solana' ? 'Solana' : chain === 'cashapp' ? 'Cash App' : chain === 'venmo' ? 'Venmo' : chain === 'zelle' ? 'Zelle' : 'PayPal';
               const hasValue = chain === 'ethereum' ? !!profile.ethereumAddress : chain === 'base' ? !!profile.baseAddress : chain === 'bitcoin' ? !!profile.bitcoinAddress : chain === 'solana' ? !!profile.solanaAddress : chain === 'cashapp' ? !!profile.cashAppCashtag?.trim() : chain === 'venmo' ? !!profile.venmoUsername?.trim() : chain === 'zelle' ? !!profile.zelleContact?.trim() : !!profile.paypalUsername?.trim();
               const displayValue = chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ? `$${profile.cashAppCashtag}` : '') : chain === 'venmo' ? (profile.venmoUsername ? `@${profile.venmoUsername}` : '') : chain === 'zelle' ? (profile.zelleContact ?? '') : (profile.paypalUsername ? `paypal.me/${profile.paypalUsername}` : '');
-              const addLabel = chain === 'ethereum' ? 'Add ETH' : chain === 'base' ? 'Add Base' : chain === 'bitcoin' ? 'Add BTC' : chain === 'solana' ? 'Add SOL' : chain === 'cashapp' ? 'Add $cashtag' : chain === 'venmo' ? 'Add Venmo' : chain === 'zelle' ? 'Add Zelle' : 'Add PayPal';
               return (
                 <div key={chain} className={`piri-card rounded-xl border-2 p-4 shadow-sm ${flavorCard(chain)}`}>
                   <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -320,7 +319,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
                       <button type="button" onClick={() => handlePickChain(chain)} className="text-xs font-semibold piri-link">{hasValue ? 'Edit' : 'Add'}</button>
                     </div>
                   </div>
-                  {hasValue ? <code className="text-piri text-sm break-all font-semibold">{displayValue}</code> : <button type="button" onClick={() => handlePickChain(chain)} className="flex items-center gap-1 text-sm font-semibold piri-link"><Plus className="w-4 h-4" /> {addLabel}</button>}
+                  {hasValue ? <code className="text-piri text-sm break-all font-semibold">{displayValue}</code> : null}
                 </div>
               );
             })}
