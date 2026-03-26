@@ -180,9 +180,7 @@ export default function SignInPage() {
           </a>
           <div className="mt-3">
             <a
-              href="/internal/REPORT_A_BUG.md"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="https://forms.gle/DEr8KYcXPKkSomUf7"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm border-2 border-piri-fresa bg-piri-fresa/10 text-piri-fresa hover:bg-piri-fresa/20 transition-colors"
             >
               Report a bug

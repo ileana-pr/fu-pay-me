@@ -98,11 +98,6 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
             <ArrowLeft className="w-5 h-5" /> Back
           </button>
           <div className="flex items-center gap-4">
-            {onEdit && (
-              <button onClick={onEdit} className="flex items-center gap-2 font-semibold text-sm text-piri transition-opacity hover:opacity-70">
-                <Pencil className="w-4 h-4" /> Edit
-              </button>
-            )}
             {onSignOut && (
               <button onClick={onSignOut} className="flex items-center gap-2 font-semibold text-sm text-piri-muted hover:text-piri transition-opacity">
                 <LogOut className="w-4 h-4" /> Sign out
@@ -149,6 +144,15 @@ export default function ProfileView({ profile, onBack, onEdit, onSignOut }: Prof
                   className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-piri text-piri bg-white hover:opacity-90 transition-opacity"
                 >
                   <Download className="w-4 h-4" /> Download image
+                </button>
+              )}
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-piri-cashapp bg-piri-cashapp/15 text-piri hover:bg-piri-cashapp/25 transition-colors"
+                >
+                  <Pencil className="w-4 h-4" /> Edit
                 </button>
               )}
               {sharePanelOpen && (

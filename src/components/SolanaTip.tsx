@@ -5,6 +5,7 @@ import { getAssociatedTokenAddress, createTransferInstruction } from '@solana/sp
 import { ArrowLeft, CheckCircle2, Loader2, AlertCircle, XCircle } from 'lucide-react';
 import { POPULAR_TOKENS, TokenConfig } from '../lib/popularTokens';
 import ChainLogo from './ChainLogo';
+import { logClientError, solanaNetworkUserMessage } from '../lib/userFacingErrors';
 
 interface SolanaTipProps {
   onBack: () => void;
@@ -39,12 +40,11 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
   const { connection } = useConnection();
 
   // must match solanaConfig default
-  const defaultEndpoint = 'https://solana-rpc.publicnode.com';
+  const defaultEndpoint = 'https://api.mainnet-beta.solana.com';
   const solanaNetwork = useMemo(() => {
     const endpoint = import.meta.env.VITE_SOLANA_ENDPOINT || defaultEndpoint;
     if (endpoint.includes('devnet')) return 'Devnet (Testnet)';
     if (endpoint.includes('testnet')) return 'Testnet';
-    if (endpoint.includes('mainnet') || endpoint.includes('publicnode')) return 'Mainnet';
     return 'Mainnet';
   }, []);
 
@@ -128,8 +128,8 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
 
       setIsSolSending(false);
     } catch (err: unknown) {
-      console.error('Error sending tip:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
+      logClientError('SolanaTip send', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
       const m = errorMessage.toLowerCase();
       const isRejection = m.includes('user rejected') || m.includes('rejected') || m.includes('denied') ||
         m.includes('cancelled') || m.includes('canceled') || m.includes('declined');
@@ -137,7 +137,10 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
         setTransactionCancelled(true);
         setError(null);
       } else {
-        setError(errorMessage);
+        const isRpc =
+          m.includes('blockhash') || m.includes('failed to fetch') || m.includes('fetch') ||
+          m.includes('network') || m.includes('ssl') || m.includes('rpc');
+        setError(isRpc ? solanaNetworkUserMessage() : 'Something went wrong sending this tip. Please try again.');
       }
       setIsSolSending(false);
     }

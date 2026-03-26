@@ -40,3 +40,8 @@ export function tipLinkInvalidUserMessage(): string {
 export function shareImageUserMessage(): string {
   return "Couldn't prepare the image. Please try again.";
 }
+
+/** solana RPC / blockhash / fetch failures */
+export function solanaNetworkUserMessage(): string {
+  return "Couldn't reach the Solana network from this device. Try again in a moment or switch networks (e.g. Wi‑Fi or mobile data).";
+}

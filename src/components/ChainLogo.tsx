@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 /**
- * Chain/app logos as images; use Piri-branded assets (tinted to piri text/fresa).
- * Place in public/logo/: ethereum.svg, base.svg, bitcoin.svg, solana.svg, cashapp.svg, venmo.svg
- * (or .png — we try .svg then .png). Fallback: initial when image missing or fails.
+ * Chain/app logos in public/logo/ — prefers uploaded raster (jpg), then svg, then png.
+ * Ethereum raster is eth.jpg; zelle has no jpg in repo (svg only).
  */
 type ChainId = 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal';
 
@@ -20,6 +19,17 @@ const FALLBACK_LETTER: Record<ChainId, string> = {
   paypal: 'P',
 };
 
+function logoCandidates(chain: ChainId): string[] {
+  const urls: string[] = [];
+  const jpgBase = chain === 'ethereum' ? 'eth' : chain;
+  if (chain !== 'zelle') {
+    urls.push(`${LOGO_DIR}/${jpgBase}.jpg`);
+  }
+  urls.push(`${LOGO_DIR}/${chain}.svg`);
+  urls.push(`${LOGO_DIR}/${chain}.png`);
+  return urls;
+}
+
 interface ChainLogoProps {
   chain: ChainId;
   className?: string;
@@ -29,17 +39,23 @@ interface ChainLogoProps {
 const defaultSize = 40;
 
 export default function ChainLogo({ chain, className = '', size = defaultSize }: ChainLogoProps) {
-  const [tryPng, setTryPng] = useState(false);
+  const candidates = useMemo(() => logoCandidates(chain), [chain]);
+  const [index, setIndex] = useState(0);
   const [imgError, setImgError] = useState(false);
-  const ext = tryPng ? '.png' : '.svg';
-  const src = `${LOGO_DIR}/${chain}${ext}`;
+
+  useEffect(() => {
+    setIndex(0);
+    setImgError(false);
+  }, [chain]);
+
+  const src = candidates[index] ?? '';
 
   const handleError = () => {
-    if (!tryPng) setTryPng(true);
+    if (index + 1 < candidates.length) setIndex((n) => n + 1);
     else setImgError(true);
   };
 
-  if (imgError) {
+  if (imgError || !src) {
     return (
       <span
         className={`inline-flex items-center justify-center font-bold text-piri ${className}`}
