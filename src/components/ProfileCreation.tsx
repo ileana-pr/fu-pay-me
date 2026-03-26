@@ -310,9 +310,12 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
               const addLabel = chain === 'ethereum' ? 'Add ETH' : chain === 'base' ? 'Add Base' : chain === 'bitcoin' ? 'Add BTC' : chain === 'solana' ? 'Add SOL' : chain === 'cashapp' ? 'Add $cashtag' : chain === 'venmo' ? 'Add Venmo' : chain === 'zelle' ? 'Add Zelle' : 'Add PayPal';
               return (
                 <div key={chain} className={`piri-card rounded-xl border-2 p-4 shadow-sm ${flavorCard(chain)}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-piri flex items-center gap-2"><ChainLogo chain={chain} size={20} /> {label}</span>
-                    <div className="flex items-center gap-2">
+                  <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="min-w-0 font-bold text-piri flex items-center gap-2">
+                      <ChainLogo chain={chain} size={20} />
+                      {label}
+                    </span>
+                    <div className="flex items-center gap-3 pl-7 sm:pl-0 sm:shrink-0">
                       {hasValue && <button type="button" onClick={(e) => { e.stopPropagation(); removePayment(chain); }} className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1" title="Remove"><Trash2 className="w-3.5 h-3.5" /> Remove</button>}
                       <button type="button" onClick={() => handlePickChain(chain)} className="text-xs font-semibold piri-link">{hasValue ? 'Edit' : 'Add'}</button>
                     </div>

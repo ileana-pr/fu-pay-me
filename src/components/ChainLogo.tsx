@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
 
 /**
- * Chain/app logos in public/logo/ — prefers uploaded raster (jpg), then svg, then png.
- * Ethereum raster is eth.jpg; zelle has no jpg in repo (svg only).
+ * Chain logos: chain jpg → chain png → /logo/piri.png → letter badge.
+ * Ethereum uses eth.jpg.
  */
 type ChainId = 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal';
 
 const LOGO_DIR = '/logo';
+const SHARED_PLACEHOLDER = `${LOGO_DIR}/piri.png`;
 
 const FALLBACK_LETTER: Record<ChainId, string> = {
   ethereum: '⟠',
@@ -20,14 +21,8 @@ const FALLBACK_LETTER: Record<ChainId, string> = {
 };
 
 function logoCandidates(chain: ChainId): string[] {
-  const urls: string[] = [];
   const jpgBase = chain === 'ethereum' ? 'eth' : chain;
-  if (chain !== 'zelle') {
-    urls.push(`${LOGO_DIR}/${jpgBase}.jpg`);
-  }
-  urls.push(`${LOGO_DIR}/${chain}.svg`);
-  urls.push(`${LOGO_DIR}/${chain}.png`);
-  return urls;
+  return [`${LOGO_DIR}/${jpgBase}.jpg`, `${LOGO_DIR}/${chain}.png`, SHARED_PLACEHOLDER];
 }
 
 interface ChainLogoProps {
