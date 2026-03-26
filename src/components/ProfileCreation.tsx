@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { logClientError, profileHttpUserMessage } from '../lib/userFacingErrors';
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
@@ -42,7 +42,13 @@ interface ProfileCreationProps {
 
 type Step = 'chains' | 'manual';
 
+const PROFILE_DRAFT_STORAGE_PREFIX = 'piri.profileCreationDraft';
+
 export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddress, initialProfile }: ProfileCreationProps) {
+  const draftStorageKey = useMemo(
+    () => `${PROFILE_DRAFT_STORAGE_PREFIX}:${initialProfile?.id ?? connectedWalletAddress ?? 'default'}`,
+    [initialProfile?.id, connectedWalletAddress]
+  );
   const [step, setStep] = useState<Step>('chains');
   const [profile, setProfile] = useState<UserProfile>({
     id: initialProfile?.id,
@@ -62,6 +68,49 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
   const [resolveError, setResolveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isDraftHydrated, setIsDraftHydrated] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const rawDraft = window.localStorage.getItem(draftStorageKey);
+      if (!rawDraft) {
+        setIsDraftHydrated(true);
+        return;
+      }
+      const parsed = JSON.parse(rawDraft) as {
+        profile?: UserProfile;
+        step?: Step;
+        editingChain?: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal';
+        manualAddress?: string;
+      };
+      if (parsed.profile) setProfile(parsed.profile);
+      if (parsed.step === 'manual' || parsed.step === 'chains') setStep(parsed.step);
+      if (parsed.editingChain) setEditingChain(parsed.editingChain);
+      if (typeof parsed.manualAddress === 'string') setManualAddress(parsed.manualAddress);
+    } catch (e) {
+      logClientError('hydrate profile draft', e);
+    } finally {
+      setIsDraftHydrated(true);
+    }
+  }, [draftStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isDraftHydrated) return;
+    try {
+      window.localStorage.setItem(
+        draftStorageKey,
+        JSON.stringify({
+          profile,
+          step,
+          editingChain,
+          manualAddress,
+        })
+      );
+    } catch (e) {
+      logClientError('persist profile draft', e);
+    }
+  }, [draftStorageKey, profile, step, editingChain, manualAddress, isDraftHydrated]);
 
   const getAddressForChain = (chain: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal') =>
     chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ?? '') : chain === 'venmo' ? (profile.venmoUsername ?? '') : chain === 'zelle' ? (profile.zelleContact ?? '') : (profile.paypalUsername ?? '');
@@ -209,6 +258,9 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     setSaveError(null);
     try {
       await onSave(profile);
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(draftStorageKey);
+      }
     } catch (e) {
       logClientError('ProfileCreation save', e);
       setSaveError(e instanceof Error ? e.message : profileHttpUserMessage(500));
