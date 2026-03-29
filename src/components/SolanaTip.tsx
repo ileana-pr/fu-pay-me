@@ -43,7 +43,7 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
   const { connection } = useConnection();
 
   const solanaNetwork = useMemo(() => {
-    const endpoint = getSolanaRpcEndpoint();
+    const endpoint = getSolanaRpcEndpoint() ?? '';
     if (endpoint.includes('devnet')) return 'Devnet (Testnet)';
     if (endpoint.includes('testnet')) return 'Testnet';
     return 'Mainnet';
@@ -52,7 +52,7 @@ export default function SolanaTip({ onBack, receivingAddress }: SolanaTipProps) 
   // Generate explorer URL
   const explorerUrl = useMemo(() => {
     if (!solHash) return null;
-    const endpoint = getSolanaRpcEndpoint();
+    const endpoint = getSolanaRpcEndpoint() ?? '';
     if (endpoint.includes('devnet')) {
       return `https://explorer.solana.com/tx/${solHash}?cluster=devnet`;
     }

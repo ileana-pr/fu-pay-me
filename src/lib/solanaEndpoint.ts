@@ -1,8 +1,5 @@
-/** requires `VITE_SOLANA_ENDPOINT` (Helius, etc.) — set in Vercel and `.env.local` */
-export function getSolanaRpcEndpoint(): string {
+/** helius etc.; vite inlines at build time — must be set in vercel for production builds */
+export function getSolanaRpcEndpoint(): string | undefined {
   const url = import.meta.env.VITE_SOLANA_ENDPOINT?.trim();
-  if (!url) {
-    throw new Error('VITE_SOLANA_ENDPOINT is not set. Add it to .env.local and Vercel.');
-  }
-  return url;
+  return url || undefined;
 }
