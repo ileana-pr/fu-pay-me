@@ -103,7 +103,15 @@ export async function GET(request: Request) {
       return Response.json({ error: 'Profile not found' }, { status: 404 });
     }
     console.error('Supabase get error:', error);
-    return Response.json({ error: 'Failed to fetch profile' }, { status: 500 });
+    return Response.json(
+      {
+        error: 'Failed to fetch profile',
+        details: error.message,
+        code: error.code,
+        hint: 'If you just added tezos, run supabase db push so tezos_address exists.',
+      },
+      { status: 500 }
+    );
   }
 
   const profile = toProfile(data as Record<string, unknown>);

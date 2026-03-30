@@ -194,7 +194,15 @@ export async function GET(request: Request) {
   const { data: queryData, error } = await query.limit(1).maybeSingle();
   if (error) {
     console.error('Supabase get profile error:', error);
-    return Response.json({ error: 'Failed to fetch profile' }, { status: 500 });
+    return Response.json(
+      {
+        error: 'Failed to fetch profile',
+        details: error.message,
+        code: error.code,
+        hint: 'If you just added tezos, run supabase db push so tezos_address exists.',
+      },
+      { status: 500 }
+    );
   }
   const data = queryData;
   if (!data) {
