@@ -1,6 +1,7 @@
-import { validateAddress, ValidationResult } from '@taquito/utils';
+// no @taquito here — it crashes Vercel lambdas at import (FUNCTION_INVOCATION_FAILED).
+// client keeps full base58check via src/lib/tezosAddress.ts (taquito).
+const TEZOS_PAYMENT_ADDRESS = /^(tz1|tz2|tz3|KT1)[1-9A-HJ-NP-Za-km-z]{33}$/;
 
-// mirror src/lib/tezosAddress.ts — do not import from src/ (vercel api bundle can break on ../../src)
 export function isValidTezosAddress(s: string): boolean {
-  return validateAddress(s.trim()) === ValidationResult.VALID;
+  return TEZOS_PAYMENT_ADDRESS.test(s.trim());
 }
