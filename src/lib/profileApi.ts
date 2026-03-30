@@ -4,6 +4,15 @@ import { logClientError, profileHttpUserMessage, profilePostUserMessage, profile
 
 const API = '/api/profile';
 
+async function readHttpErrorPayload(res: Response): Promise<unknown> {
+  const text = await res.text();
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return { parseNote: 'not json', bodyPreview: text.slice(0, 500) };
+  }
+}
+
 /** upload resized avatar; updates profiles.avatar_url server-side; requires signed-in owner */
 export async function uploadProfileAvatar(profileId: string, imageBlob: Blob): Promise<{ avatarUrl: string }> {
   const { data: { session } } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
@@ -74,7 +83,7 @@ export async function fetchProfileBySession(): Promise<UserProfile | null> {
   });
   if (res.status === 404) return null;
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
+    const err = await readHttpErrorPayload(res);
     logClientError('fetchProfileBySession', res.status, err);
     throw new Error(profileHttpUserMessage(res.status));
   }
@@ -100,7 +109,7 @@ export async function fetchProfile(id: string): Promise<UserProfile> {
   const res = await fetch(`${API}/${id}`);
   if (!res.ok) {
     if (res.status === 404) throw new Error("This tip page couldn't be found.");
-    const err = await res.json().catch(() => ({ error: res.statusText }));
+    const err = await readHttpErrorPayload(res);
     logClientError('fetchProfile', res.status, err);
     throw new Error(profileHttpUserMessage(res.status));
   }

@@ -70,57 +70,80 @@ const snakeToCamel: Record<string, string> = {
   avatar_url: 'avatarUrl',
 };
 
+const PUBLIC_PROFILE_KEYS = new Set([
+  'ethereumAddress',
+  'baseAddress',
+  'bitcoinAddress',
+  'solanaAddress',
+  'tezosAddress',
+  'cashAppCashtag',
+  'venmoUsername',
+  'zelleContact',
+  'paypalUsername',
+  'displayName',
+  'avatarUrl',
+]);
+
 function toProfile(row: Record<string, unknown>): Record<string, string | undefined> {
   const profile: Record<string, string | undefined> = {};
   const skip = ['id', 'created_at', 'updated_at', 'user_id', 'owner_address', 'email'];
   for (const [k, v] of Object.entries(row)) {
     if (skip.includes(k)) continue;
-    const key = snakeToCamel[k] ?? k;
+    const key = (snakeToCamel[k] ?? k) as string;
+    if (!PUBLIC_PROFILE_KEYS.has(key)) continue;
     profile[key] = typeof v === 'string' ? v : undefined;
   }
   return profile;
 }
 
 export async function GET(request: Request) {
-  if (!supabase) {
-    return Response.json({ error: 'Storage not configured' }, { status: 503 });
-  }
-
-  const path = new URL(request.url).pathname;
-  const id = path.replace(/^\/api\/profile\//, '').split('/')[0];
-  if (!id || id.length > 32) {
-    return Response.json({ error: 'Invalid profile id' }, { status: 400 });
-  }
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return Response.json({ error: 'Profile not found' }, { status: 404 });
+  try {
+    if (!supabase) {
+      return Response.json({ error: 'Storage not configured' }, { status: 503 });
     }
-    console.error('Supabase get error:', error);
-    return Response.json(
-      {
-        error: 'Failed to fetch profile',
-        details: error.message,
-        code: error.code,
-        hint: 'If you just added tezos, run supabase db push so tezos_address exists.',
+
+    const path = new URL(request.url).pathname;
+    const id = path.replace(/^\/api\/profile\//, '').split('/')[0];
+    if (!id || id.length > 32) {
+      return Response.json({ error: 'Invalid profile id' }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return Response.json({ error: 'Profile not found' }, { status: 404 });
+      }
+      console.error('Supabase get error:', error);
+      return Response.json(
+        {
+          error: 'Failed to fetch profile',
+          details: error.message,
+          code: error.code,
+          hint: 'If you just added tezos, run supabase db push so tezos_address exists.',
+        },
+        { status: 500 }
+      );
+    }
+
+    const profile = toProfile(data as Record<string, unknown>);
+    return Response.json(profile, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
       },
+    });
+  } catch (e) {
+    console.error('GET /api/profile/[id] fatal:', e);
+    return Response.json(
+      { error: 'Failed to fetch profile', details: e instanceof Error ? e.message : String(e) },
       { status: 500 }
     );
   }
-
-  const profile = toProfile(data as Record<string, unknown>);
-  return Response.json(profile, {
-    status: 200,
-    headers: {
-      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-    },
-  });
 }
 
 const camelToSnake: Record<string, string> = {

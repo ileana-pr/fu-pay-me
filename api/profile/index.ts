@@ -135,6 +135,21 @@ const snakeToCamel: Record<string, string> = {
   avatar_url: 'avatarUrl',
 };
 
+// never echo arbitrary db columns (could shadow "error" or bloat payload)
+const PUBLIC_PROFILE_KEYS = new Set([
+  'ethereumAddress',
+  'baseAddress',
+  'bitcoinAddress',
+  'solanaAddress',
+  'tezosAddress',
+  'cashAppCashtag',
+  'venmoUsername',
+  'zelleContact',
+  'paypalUsername',
+  'displayName',
+  'avatarUrl',
+]);
+
 // wallet sign-in uses synthetic emails (0x...@wallet.piri) — never store in profiles.email
 const WALLET_EMAIL_DOMAIN = 'wallet.piri';
 function isWalletEmail(email: string | undefined): boolean {
@@ -145,72 +160,113 @@ function rowToProfile(row: Record<string, unknown>): Record<string, string | und
   const out: Record<string, string | undefined> = {};
   for (const [k, v] of Object.entries(row)) {
     if (k === 'id' || k === 'created_at' || k === 'user_id' || k === 'owner_address' || k === 'email') continue;
-    const key = snakeToCamel[k] ?? k;
+    const key = (snakeToCamel[k] ?? k) as string;
+    if (!PUBLIC_PROFILE_KEYS.has(key)) continue;
     out[key] = typeof v === 'string' ? v : undefined;
   }
   return out;
 }
 
+function profileJson(row: Record<string, unknown>): Record<string, unknown> {
+  const id = row.id;
+  return { id: id != null ? String(id) : '', ...rowToProfile(row) };
+}
+
 /** GET /api/profile — fetch by ?address=0x... OR by Authorization: Bearer <token> (user_id) */
 export async function GET(request: Request) {
-  if (!supabase) {
-    return Response.json({ error: 'Storage not configured' }, { status: 503 });
-  }
-  const url = new URL(request.url);
-  const address = url.searchParams.get('address')?.trim();
-  const authHeader = request.headers.get('Authorization');
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-
-  let query = supabase.from('profiles').select('*');
-  if (address && address.length >= 10) {
-    query = query.ilike('owner_address', address);
-  } else if (token) {
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return Response.json({ error: 'Invalid or expired session' }, { status: 401 });
+  try {
+    if (!supabase) {
+      return Response.json({ error: 'Storage not configured' }, { status: 503 });
     }
-    // for google/email: resolve by email first so one email = one profile (avoids duplicate users when supabase creates multiple auth users for same email)
-    const realEmail = user.email?.trim();
-    if (realEmail && !isWalletEmail(realEmail)) {
-      const escaped = realEmail.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
-      const { data: byEmail } = await supabase.from('profiles').select('*').ilike('email', escaped).limit(1).maybeSingle();
-      if (byEmail) {
-        const existing = byEmail as Record<string, unknown>;
-        if (existing.user_id !== user.id) {
-          await supabase.from('profiles').update({ user_id: user.id }).eq('id', existing.id);
-        }
-        const profile = rowToProfile(existing);
-        return Response.json({ id: existing.id, ...profile });
+    const url = new URL(request.url);
+    const address = url.searchParams.get('address')?.trim();
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+    let query = supabase.from('profiles').select('*');
+    if (address && address.length >= 10) {
+      query = query.ilike('owner_address', address);
+    } else if (token) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !user) {
+        return Response.json({ error: 'Invalid or expired session' }, { status: 401 });
       }
+      // for google/email: resolve by email first so one email = one profile (avoids duplicate users when supabase creates multiple auth users for same email)
+      const realEmail = user.email?.trim();
+      if (realEmail && !isWalletEmail(realEmail)) {
+        const escaped = realEmail.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+        const { data: byEmail, error: emailLookupErr } = await supabase
+          .from('profiles')
+          .select('*')
+          .ilike('email', escaped)
+          .limit(1)
+          .maybeSingle();
+        if (emailLookupErr) {
+          console.error('Supabase profile by email:', emailLookupErr);
+          return Response.json(
+            {
+              error: 'Failed to fetch profile',
+              details: emailLookupErr.message,
+              code: emailLookupErr.code,
+            },
+            { status: 500 }
+          );
+        }
+        if (byEmail) {
+          const existing = byEmail as Record<string, unknown>;
+          if (existing.user_id !== user.id) {
+            const { error: linkErr } = await supabase
+              .from('profiles')
+              .update({ user_id: user.id })
+              .eq('id', existing.id);
+            if (linkErr) {
+              console.error('Supabase profile link user_id:', linkErr);
+              return Response.json(
+                { error: 'Failed to fetch profile', details: linkErr.message, code: linkErr.code },
+                { status: 500 }
+              );
+            }
+          }
+          return Response.json(profileJson(existing));
+        }
+      }
+      query = query.eq('user_id', user.id);
+    } else {
+      return Response.json(
+        { error: 'Provide ?address=0x... or Authorization: Bearer <token>' },
+        { status: 400 }
+      );
     }
-    query = query.eq('user_id', user.id);
-  } else {
-    return Response.json(
-      { error: 'Provide ?address=0x... or Authorization: Bearer <token>' },
-      { status: 400 }
-    );
-  }
 
-  const { data: queryData, error } = await query.limit(1).maybeSingle();
-  if (error) {
-    console.error('Supabase get profile error:', error);
+    const { data: queryData, error } = await query.limit(1).maybeSingle();
+    if (error) {
+      console.error('Supabase get profile error:', error);
+      return Response.json(
+        {
+          error: 'Failed to fetch profile',
+          details: error.message,
+          code: error.code,
+          hint: 'If you just added tezos, run supabase db push so tezos_address exists.',
+        },
+        { status: 500 }
+      );
+    }
+    const data = queryData;
+    if (!data) {
+      return Response.json({ error: 'Profile not found' }, { status: 404 });
+    }
+    const row = data as Record<string, unknown>;
+    return Response.json(profileJson(row));
+  } catch (e) {
+    console.error('GET /api/profile fatal:', e);
     return Response.json(
       {
         error: 'Failed to fetch profile',
-        details: error.message,
-        code: error.code,
-        hint: 'If you just added tezos, run supabase db push so tezos_address exists.',
+        details: e instanceof Error ? e.message : String(e),
       },
       { status: 500 }
     );
   }
-  const data = queryData;
-  if (!data) {
-    return Response.json({ error: 'Profile not found' }, { status: 404 });
-  }
-  const row = data as Record<string, unknown>;
-  const profile = rowToProfile(row);
-  return Response.json({ id: row.id, ...profile });
 }
 
 export async function POST(request: Request) {
