@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { logClientError, profileHttpUserMessage } from '../lib/userFacingErrors';
 import { createProfile, uploadProfileAvatar } from '../lib/profileApi';
 import { resizeProfileAvatarFile } from '../lib/resizeProfileAvatar';
+import { isValidTezosAddress } from '../lib/tezosAddress';
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
@@ -24,6 +25,8 @@ export interface UserProfile {
   /** Bitcoin payment address (legacy 1..., P2SH 3..., or bech32 bc1...); optional */
   bitcoinAddress?: string;
   solanaAddress: string;
+  /** Tezos implicit (tz1/tz2/tz3) or KT1 receive address */
+  tezosAddress: string;
   /** cash app $cashtag (e.g. johndoe) — opens cash.app/$cashtag when tipper pays */
   cashAppCashtag?: string;
   /** venmo username (e.g. johndoe) — opens venmo.com/username?txn=pay when tipper pays */
@@ -62,6 +65,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     baseAddress: initialProfile?.baseAddress ?? '',
     bitcoinAddress: initialProfile?.bitcoinAddress ?? '',
     solanaAddress: initialProfile?.solanaAddress ?? '',
+    tezosAddress: initialProfile?.tezosAddress ?? '',
     cashAppCashtag: initialProfile?.cashAppCashtag ?? '',
     venmoUsername: initialProfile?.venmoUsername ?? '',
     zelleContact: initialProfile?.zelleContact ?? '',
@@ -69,7 +73,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     displayName: initialProfile?.displayName ?? '',
     avatarUrl: initialProfile?.avatarUrl ?? '',
   });
-  const [editingChain, setEditingChain] = useState<'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal'>('ethereum');
+  const [editingChain, setEditingChain] = useState<'ethereum' | 'base' | 'bitcoin' | 'solana' | 'tezos' | 'cashapp' | 'venmo' | 'zelle' | 'paypal'>('ethereum');
   const [manualAddress, setManualAddress] = useState('');
   const [isResolving, setIsResolving] = useState(false);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
@@ -97,7 +101,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
       const parsed = JSON.parse(rawDraft) as {
         profile?: UserProfile;
         step?: Step;
-        editingChain?: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal';
+        editingChain?: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'tezos' | 'cashapp' | 'venmo' | 'zelle' | 'paypal';
         manualAddress?: string;
       };
       if (parsed.profile) setProfile(parsed.profile);
@@ -128,10 +132,10 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     }
   }, [draftStorageKey, profile, step, editingChain, manualAddress, isDraftHydrated]);
 
-  const getAddressForChain = (chain: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal') =>
-    chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ?? '') : chain === 'venmo' ? (profile.venmoUsername ?? '') : chain === 'zelle' ? (profile.zelleContact ?? '') : (profile.paypalUsername ?? '');
+  const getAddressForChain = (chain: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'tezos' | 'cashapp' | 'venmo' | 'zelle' | 'paypal') =>
+    chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'tezos' ? profile.tezosAddress : chain === 'cashapp' ? (profile.cashAppCashtag ?? '') : chain === 'venmo' ? (profile.venmoUsername ?? '') : chain === 'zelle' ? (profile.zelleContact ?? '') : (profile.paypalUsername ?? '');
 
-  const handlePickChain = (chain: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal') => {
+  const handlePickChain = (chain: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'tezos' | 'cashapp' | 'venmo' | 'zelle' | 'paypal') => {
     setEditingChain(chain);
     setManualAddress(getAddressForChain(chain) ?? '');
     setResolvedAddress(null);
@@ -191,7 +195,6 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
 
   const isValidEvmAddress = (s: string) => /^0x[a-fA-F0-9]{40}$/.test(s);
   const isValidBitcoinAddress = (s: string) => /^(1|3)[a-zA-HJ-NP-Z0-9]{25,34}$|^bc1[a-z0-9]{39,89}$/i.test(s.trim());
-
   const handleSaveAddress = () => {
     const trimmed = manualAddress.trim();
     // cash app: store $cashtag without the $, lowercase (cashtags are case-insensitive)
@@ -253,6 +256,10 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
       setResolveError('Please enter a valid Bitcoin address (1..., 3..., or bc1...).');
       return;
     }
+    if (editingChain === 'tezos' && !isValidTezosAddress(address)) {
+      setResolveError('Please enter a valid Tezos address (tz1…, tz2…, tz3…, or KT1…).');
+      return;
+    }
     setResolveError(null);
     if (editingChain === 'ethereum') {
       setProfile(p => ({ ...p, ethereumAddress: address }));
@@ -260,6 +267,8 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
       setProfile(p => ({ ...p, baseAddress: address }));
     } else if (editingChain === 'bitcoin') {
       setProfile(p => ({ ...p, bitcoinAddress: address }));
+    } else if (editingChain === 'tezos') {
+      setProfile(p => ({ ...p, tezosAddress: address }));
     } else {
       setProfile(p => ({ ...p, solanaAddress: address }));
     }
@@ -333,22 +342,23 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     }
   };
 
-  const removePayment = (kind: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal') => {
+  const removePayment = (kind: 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'tezos' | 'cashapp' | 'venmo' | 'zelle' | 'paypal') => {
     if (kind === 'ethereum') setProfile(p => ({ ...p, ethereumAddress: '' }));
     else if (kind === 'base') setProfile(p => ({ ...p, baseAddress: '' }));
     else if (kind === 'bitcoin') setProfile(p => ({ ...p, bitcoinAddress: '' }));
     else if (kind === 'solana') setProfile(p => ({ ...p, solanaAddress: '' }));
+    else if (kind === 'tezos') setProfile(p => ({ ...p, tezosAddress: '' }));
     else if (kind === 'cashapp') setProfile(p => ({ ...p, cashAppCashtag: '' }));
     else if (kind === 'venmo') setProfile(p => ({ ...p, venmoUsername: '' }));
     else if (kind === 'zelle') setProfile(p => ({ ...p, zelleContact: '' }));
     else setProfile(p => ({ ...p, paypalUsername: '' }));
   };
 
-  const hasAnyAddress = profile.ethereumAddress || profile.baseAddress || profile.bitcoinAddress || profile.solanaAddress || !!profile.cashAppCashtag?.trim() || !!profile.venmoUsername?.trim() || !!profile.zelleContact?.trim() || !!profile.paypalUsername?.trim();
+  const hasAnyAddress = profile.ethereumAddress || profile.baseAddress || profile.bitcoinAddress || profile.solanaAddress || profile.tezosAddress || !!profile.cashAppCashtag?.trim() || !!profile.venmoUsername?.trim() || !!profile.zelleContact?.trim() || !!profile.paypalUsername?.trim();
 
   // flavor styling per method (no flavor names in UI)
   const flavorCard = (ch: typeof editingChain) =>
-    ch === 'ethereum' ? 'piri-card-ethereum' : ch === 'base' ? 'piri-card-base' : ch === 'bitcoin' ? 'piri-card-bitcoin' : ch === 'solana' ? 'piri-card-solana' : ch === 'cashapp' ? 'piri-card-cashapp' : ch === 'venmo' ? 'piri-card-venmo' : ch === 'zelle' ? 'piri-card-zelle' : 'piri-card-paypal';
+    ch === 'ethereum' ? 'piri-card-ethereum' : ch === 'base' ? 'piri-card-base' : ch === 'bitcoin' ? 'piri-card-bitcoin' : ch === 'solana' ? 'piri-card-solana' : ch === 'tezos' ? 'piri-card-tezos' : ch === 'cashapp' ? 'piri-card-cashapp' : ch === 'venmo' ? 'piri-card-venmo' : ch === 'zelle' ? 'piri-card-zelle' : 'piri-card-paypal';
 
   // ─── step 1: your flavors (add/edit, then save all) ───
   if (step === 'chains') {
@@ -412,10 +422,10 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
             </div>
           </div>
           <div className="space-y-4">
-            {(['ethereum', 'base', 'bitcoin', 'solana', 'cashapp', 'venmo', 'zelle', 'paypal'] as const).map((chain) => {
-              const label = chain === 'ethereum' ? 'Ethereum' : chain === 'base' ? 'Base' : chain === 'bitcoin' ? 'Bitcoin' : chain === 'solana' ? 'Solana' : chain === 'cashapp' ? 'Cash App' : chain === 'venmo' ? 'Venmo' : chain === 'zelle' ? 'Zelle' : 'PayPal';
-              const hasValue = chain === 'ethereum' ? !!profile.ethereumAddress : chain === 'base' ? !!profile.baseAddress : chain === 'bitcoin' ? !!profile.bitcoinAddress : chain === 'solana' ? !!profile.solanaAddress : chain === 'cashapp' ? !!profile.cashAppCashtag?.trim() : chain === 'venmo' ? !!profile.venmoUsername?.trim() : chain === 'zelle' ? !!profile.zelleContact?.trim() : !!profile.paypalUsername?.trim();
-              const displayValue = chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'cashapp' ? (profile.cashAppCashtag ? `$${profile.cashAppCashtag}` : '') : chain === 'venmo' ? (profile.venmoUsername ? `@${profile.venmoUsername}` : '') : chain === 'zelle' ? (profile.zelleContact ?? '') : (profile.paypalUsername ? `paypal.me/${profile.paypalUsername}` : '');
+            {(['ethereum', 'base', 'bitcoin', 'solana', 'tezos', 'cashapp', 'venmo', 'zelle', 'paypal'] as const).map((chain) => {
+              const label = chain === 'ethereum' ? 'Ethereum' : chain === 'base' ? 'Base' : chain === 'bitcoin' ? 'Bitcoin' : chain === 'solana' ? 'Solana' : chain === 'tezos' ? 'Tezos' : chain === 'cashapp' ? 'Cash App' : chain === 'venmo' ? 'Venmo' : chain === 'zelle' ? 'Zelle' : 'PayPal';
+              const hasValue = chain === 'ethereum' ? !!profile.ethereumAddress : chain === 'base' ? !!profile.baseAddress : chain === 'bitcoin' ? !!profile.bitcoinAddress : chain === 'solana' ? !!profile.solanaAddress : chain === 'tezos' ? !!profile.tezosAddress : chain === 'cashapp' ? !!profile.cashAppCashtag?.trim() : chain === 'venmo' ? !!profile.venmoUsername?.trim() : chain === 'zelle' ? !!profile.zelleContact?.trim() : !!profile.paypalUsername?.trim();
+              const displayValue = chain === 'ethereum' ? profile.ethereumAddress : chain === 'base' ? profile.baseAddress : chain === 'bitcoin' ? profile.bitcoinAddress : chain === 'solana' ? profile.solanaAddress : chain === 'tezos' ? profile.tezosAddress : chain === 'cashapp' ? (profile.cashAppCashtag ? `$${profile.cashAppCashtag}` : '') : chain === 'venmo' ? (profile.venmoUsername ? `@${profile.venmoUsername}` : '') : chain === 'zelle' ? (profile.zelleContact ?? '') : (profile.paypalUsername ? `paypal.me/${profile.paypalUsername}` : '');
               return (
                 <div key={chain} className={`piri-card flex-col items-stretch rounded-xl border-2 p-4 shadow-sm ${flavorCard(chain)}`}>
                   <div className="mb-1 flex flex-col gap-2 md:flex-row md:items-start md:justify-between md:gap-0">
@@ -556,7 +566,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
       );
     }
 
-    const chainLabel = editingChain === 'ethereum' ? 'Ethereum' : editingChain === 'base' ? 'Base' : editingChain === 'bitcoin' ? 'Bitcoin' : 'Solana';
+    const chainLabel = editingChain === 'ethereum' ? 'Ethereum' : editingChain === 'base' ? 'Base' : editingChain === 'bitcoin' ? 'Bitcoin' : editingChain === 'tezos' ? 'Tezos' : 'Solana';
     return (
       <div className="piri-page">
         <div className="max-w-lg mx-auto px-4 py-12">
@@ -567,7 +577,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
             <h1 className="piri-heading text-3xl font-black mb-2">{chainLabel}</h1>
             <p className="text-sm piri-muted font-semibold">
               paste a wallet address
-              {editingChain === 'ethereum' ? ' or ENS (e.g. vitalik.eth)' : editingChain === 'base' ? ' or .base name' : editingChain === 'bitcoin' ? ' (1..., 3..., or bc1...)' : ' or .sol domain'}
+              {editingChain === 'ethereum' ? ' or ENS (e.g. vitalik.eth)' : editingChain === 'base' ? ' or .base name' : editingChain === 'bitcoin' ? ' (1..., 3..., or bc1...)' : editingChain === 'tezos' ? ' (tz1…, tz2…, tz3…, or KT1…)' : ' or .sol domain'}
             </p>
           </div>
           <div className="space-y-6">
@@ -595,7 +605,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
                   else if (trimmed || resolvedAddress) handleSaveAddress();
                 }
               }}
-              placeholder={editingChain === 'ethereum' ? '0x... or name.eth' : editingChain === 'base' ? '0x... or name.base' : editingChain === 'bitcoin' ? 'bc1... or 1... or 3...' : 'Base58 address or name.sol'}
+              placeholder={editingChain === 'ethereum' ? '0x... or name.eth' : editingChain === 'base' ? '0x... or name.base' : editingChain === 'bitcoin' ? 'bc1... or 1... or 3...' : editingChain === 'tezos' ? 'tz1... or KT1...' : 'Base58 address or name.sol'}
               className="w-full px-4 py-4 rounded-xl border-2 border-piri focus:outline-none focus:ring-2 focus:ring-piri text-piri placeholder-piri-muted text-lg font-semibold" autoFocus />
             {resolvedAddress && (
               <div className="rounded-xl p-4 border-2 border-piri-solana piri-card-solana shadow-sm">
@@ -608,7 +618,7 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
                 <p className="text-sm font-semibold text-red-700">{resolveError}</p>
               </div>
             )}
-            {editingChain !== 'bitcoin' && isDomainName(manualAddress) && !resolvedAddress ? (
+            {editingChain !== 'bitcoin' && editingChain !== 'tezos' && isDomainName(manualAddress) && !resolvedAddress ? (
               <button onClick={() => resolveDomain(manualAddress.trim().toLowerCase())} disabled={isResolving}
                 className="w-full py-4 rounded-xl font-bold text-lg piri-btn-primary disabled:opacity-60 hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
                 {isResolving ? <><Loader2 className="w-5 h-5 animate-spin" /> Resolving...</> : <>Resolve {(manualAddress.trim().toLowerCase().includes('.base') || manualAddress.trim().toLowerCase().endsWith('.base')) ? '.base' : manualAddress.trim().toLowerCase().endsWith('.eth') ? 'ENS' : '.sol'} Name</>}

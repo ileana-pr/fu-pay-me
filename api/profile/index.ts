@@ -7,6 +7,7 @@ config({ path: path.join(process.cwd(), '.env') });
 
 import { createClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
+import { isValidTezosAddress } from '../lib/tezosAddress';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -26,6 +27,7 @@ interface StoredProfile {
   baseAddress?: string;
   bitcoinAddress?: string;
   solanaAddress?: string;
+  tezosAddress?: string;
   cashAppCashtag?: string;
   venmoUsername?: string;
   zelleContact?: string;
@@ -56,6 +58,7 @@ function validateProfile(body: unknown): body is StoredProfile {
     'baseAddress',
     'bitcoinAddress',
     'solanaAddress',
+    'tezosAddress',
     'cashAppCashtag',
     'venmoUsername',
     'zelleContact',
@@ -71,11 +74,19 @@ function validateProfile(body: unknown): body is StoredProfile {
   }
   if (typeof p.displayName === 'string' && p.displayName.length > DISPLAY_NAME_MAX) return false;
   if (typeof p.avatarUrl === 'string' && !isValidOptionalHttpsUrl(p.avatarUrl)) return false;
+  if (
+    typeof p.tezosAddress === 'string' &&
+    p.tezosAddress.trim().length > 0 &&
+    !isValidTezosAddress(p.tezosAddress)
+  ) {
+    return false;
+  }
   const vals = [
     p.ethereumAddress,
     p.baseAddress,
     p.bitcoinAddress,
     p.solanaAddress,
+    p.tezosAddress,
     p.cashAppCashtag,
     p.venmoUsername,
     p.zelleContact,
@@ -89,6 +100,7 @@ const camelToSnake: Record<string, string> = {
   baseAddress: 'base_address',
   bitcoinAddress: 'bitcoin_address',
   solanaAddress: 'solana_address',
+  tezosAddress: 'tezos_address',
   cashAppCashtag: 'cash_app_cashtag',
   venmoUsername: 'venmo_username',
   zelleContact: 'zelle_contact',
@@ -114,6 +126,7 @@ const snakeToCamel: Record<string, string> = {
   base_address: 'baseAddress',
   bitcoin_address: 'bitcoinAddress',
   solana_address: 'solanaAddress',
+  tezos_address: 'tezosAddress',
   cash_app_cashtag: 'cashAppCashtag',
   venmo_username: 'venmoUsername',
   zelle_contact: 'zelleContact',

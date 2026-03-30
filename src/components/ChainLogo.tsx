@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
  * Chain logos: chain jpg → chain png → /logo/piri.png → letter badge.
  * Ethereum uses eth.jpg.
  */
-type ChainId = 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'cashapp' | 'venmo' | 'zelle' | 'paypal';
+type ChainId = 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'tezos' | 'cashapp' | 'venmo' | 'zelle' | 'paypal';
 
 const LOGO_DIR = '/logo';
 const SHARED_PLACEHOLDER = `${LOGO_DIR}/piri.png`;
@@ -14,6 +14,7 @@ const FALLBACK_LETTER: Record<ChainId, string> = {
   base: '⬡',
   bitcoin: '₿',
   solana: '◎',
+  tezos: 'ꜩ',
   cashapp: '$',
   venmo: 'V',
   zelle: 'Z',

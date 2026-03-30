@@ -17,6 +17,7 @@
   --piri-venmo: #0EA5E9;      /* classic light blue */
   --piri-bitcoin: #F59E0B;    /* amber */
   --piri-solana: #86198F;     /* Solana (Guayaba) */
+  --piri-tezos: #2B7DF7;     /* Tezos */
   --piri-cashapp: #10B981;   /* green */
   --piri-zelle: #6D1ED4;     /* Zelle brand purple */
   --piri-paypal: #003087;    /* PayPal brand blue */
@@ -70,6 +71,7 @@
   .piri-card-venmo { background-color: rgba(14, 165, 233, 0.2); border-color: var(--piri-venmo); }
   .piri-card-bitcoin { background-color: rgba(245, 158, 11, 0.2); border-color: var(--piri-bitcoin); }
   .piri-card-solana { background-color: rgba(134, 25, 143, 0.2); border-color: var(--piri-solana); }
+  .piri-card-tezos { background-color: rgba(43, 125, 247, 0.18); border-color: var(--piri-tezos); }
   .piri-card-cashapp { background-color: rgba(16, 185, 129, 0.2); border-color: var(--piri-cashapp); }
   .piri-card-zelle { background-color: rgba(109, 30, 212, 0.2); border-color: var(--piri-zelle); }
   .piri-card-paypal { background-color: rgba(0, 48, 135, 0.2); border-color: var(--piri-paypal); }

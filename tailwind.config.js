@@ -14,6 +14,7 @@ export default {
           venmo: '#0EA5E9',
           bitcoin: '#F59E0B',
           solana: '#9945FF',
+          tezos: '#2B7DF7',
           cashapp: '#10B981',
           zelle: '#6D1ED4',
           paypal: '#003087',

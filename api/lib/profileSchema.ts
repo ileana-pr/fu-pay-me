@@ -1,9 +1,12 @@
 // profile schema for api — matches frontend UserProfile
+import { isValidTezosAddress } from './tezosAddress';
+
 export interface StoredProfile {
   ethereumAddress?: string;
   baseAddress?: string;
   bitcoinAddress?: string;
   solanaAddress?: string;
+  tezosAddress?: string;
   cashAppCashtag?: string;
   venmoUsername?: string;
   zelleContact?: string;
@@ -16,6 +19,7 @@ function hasAtLeastOneMethod(p: StoredProfile): boolean {
     p.baseAddress,
     p.bitcoinAddress,
     p.solanaAddress,
+    p.tezosAddress,
     p.cashAppCashtag,
     p.venmoUsername,
     p.zelleContact,
@@ -32,6 +36,7 @@ export function validateProfile(body: unknown): body is StoredProfile {
     'baseAddress',
     'bitcoinAddress',
     'solanaAddress',
+    'tezosAddress',
     'cashAppCashtag',
     'venmoUsername',
     'zelleContact',
@@ -39,6 +44,13 @@ export function validateProfile(body: unknown): body is StoredProfile {
   ];
   for (const key of Object.keys(p)) {
     if (!allowed.includes(key) || typeof p[key] !== 'string') return false;
+  }
+  if (
+    typeof p.tezosAddress === 'string' &&
+    p.tezosAddress.trim().length > 0 &&
+    !isValidTezosAddress(p.tezosAddress)
+  ) {
+    return false;
   }
   return hasAtLeastOneMethod(p as StoredProfile);
 }

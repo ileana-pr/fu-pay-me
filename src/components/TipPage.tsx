@@ -3,10 +3,11 @@ import { Copy, Check, ArrowLeft, Wallet, ExternalLink } from 'lucide-react';
 import EthereumTip from './EthereumTip';
 import BaseTip from './BaseTip';
 import SolanaTip from './SolanaTip';
+import TezosTip from './TezosTip';
 import ChainLogo from './ChainLogo';
 import { UserProfile } from './ProfileCreation';
 
-type Chain = 'ethereum' | 'base' | 'bitcoin' | 'solana';
+type Chain = 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'tezos';
 type PaymentMethod = Chain | 'cashapp' | 'venmo' | 'zelle' | 'paypal';
 type View = 'menu' | 'detail' | 'pay';
 
@@ -88,6 +89,9 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
   }
   if (profile.solanaAddress) {
     chains.push({ chain: 'solana', address: profile.solanaAddress, label: 'Solana', cardClass: 'piri-card-solana', logoBoxClass: 'border-piri-solana bg-piri-solana/20', btnClass: 'bg-piri-solana' });
+  }
+  if (profile.tezosAddress?.trim()) {
+    chains.push({ chain: 'tezos', address: profile.tezosAddress.trim(), label: 'Tezos', cardClass: 'piri-card-tezos', logoBoxClass: 'border-piri-tezos bg-piri-tezos/20', btnClass: 'bg-piri-tezos' });
   }
 
   const selected = selectedChain && selectedChain !== 'cashapp' && selectedChain !== 'venmo' && selectedChain !== 'zelle' && selectedChain !== 'paypal' ? chains.find(c => c.chain === selectedChain) : null;
@@ -177,6 +181,9 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
         receivingAddress={profile.solanaAddress}
       />
     );
+  }
+  if (view === 'pay' && selectedChain === 'tezos' && profile.tezosAddress?.trim()) {
+    return <TezosTip onBack={() => setView('detail')} receivingAddress={profile.tezosAddress.trim()} />;
   }
 
   if (view === 'detail' && selectedChain === 'venmo' && venmoUsername) {
@@ -446,7 +453,7 @@ export default function TipPage({ profile }: { profile: UserProfile }) {
                 <div className="min-w-0">
                   <div className="font-bold text-xl text-piri">{c.label}</div>
                   <div className="text-sm piri-muted">
-                    {c.chain === 'ethereum' ? 'ETH & ERC-20' : c.chain === 'base' ? 'ETH & tokens on Base' : c.chain === 'bitcoin' ? 'Send BTC' : 'SOL & SPL tokens'}
+                    {c.chain === 'ethereum' ? 'ETH & ERC-20' : c.chain === 'base' ? 'ETH & tokens on Base' : c.chain === 'bitcoin' ? 'Send BTC' : c.chain === 'tezos' ? 'Send XTZ' : 'SOL & SPL tokens'}
                   </div>
                 </div>
               </button>

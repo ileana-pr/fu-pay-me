@@ -120,7 +120,7 @@ function AppContent() {
           setUserProfile(profile);
           localStorage.setItem('piri-profile', JSON.stringify(profile));
           setPendingPreFillAddress(null);
-          const hasPaymentMethods = !!(profile.ethereumAddress || profile.baseAddress || profile.bitcoinAddress || profile.solanaAddress || profile.cashAppCashtag?.trim() || profile.venmoUsername?.trim() || profile.zelleContact?.trim() || profile.paypalUsername?.trim());
+          const hasPaymentMethods = !!(profile.ethereumAddress || profile.baseAddress || profile.bitcoinAddress || profile.solanaAddress || profile.tezosAddress || profile.cashAppCashtag?.trim() || profile.venmoUsername?.trim() || profile.zelleContact?.trim() || profile.paypalUsername?.trim());
           setCurrentPage(hasPaymentMethods ? 'view' : 'create');
         } else {
           setUserProfile(null);

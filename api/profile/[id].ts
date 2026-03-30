@@ -1,6 +1,7 @@
 import { config } from 'dotenv';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
+import { isValidTezosAddress } from '../lib/tezosAddress';
 
 config({ path: path.join(process.cwd(), '.env.local') });
 config({ path: path.join(process.cwd(), '.env') });
@@ -16,7 +17,7 @@ const DISPLAY_NAME_MAX = 80;
 const AVATAR_URL_MAX = 2048;
 
 const PAYMENT_KEYS = [
-  'ethereumAddress', 'baseAddress', 'bitcoinAddress', 'solanaAddress',
+  'ethereumAddress', 'baseAddress', 'bitcoinAddress', 'solanaAddress', 'tezosAddress',
   'cashAppCashtag', 'venmoUsername', 'zelleContact', 'paypalUsername',
 ];
 const ALLOWED_KEYS = [...PAYMENT_KEYS, 'displayName', 'avatarUrl'];
@@ -45,6 +46,13 @@ function validateProfile(body: unknown): body is Record<string, unknown> {
   }
   if (typeof p.displayName === 'string' && p.displayName.length > DISPLAY_NAME_MAX) return false;
   if (typeof p.avatarUrl === 'string' && !isValidOptionalHttpsUrl(p.avatarUrl)) return false;
+  if (
+    typeof p.tezosAddress === 'string' &&
+    p.tezosAddress.trim().length > 0 &&
+    !isValidTezosAddress(p.tezosAddress)
+  ) {
+    return false;
+  }
   return hasAtLeastOneMethod(p);
 }
 
@@ -53,6 +61,7 @@ const snakeToCamel: Record<string, string> = {
   base_address: 'baseAddress',
   bitcoin_address: 'bitcoinAddress',
   solana_address: 'solanaAddress',
+  tezos_address: 'tezosAddress',
   cash_app_cashtag: 'cashAppCashtag',
   venmo_username: 'venmoUsername',
   zelle_contact: 'zelleContact',
@@ -111,6 +120,7 @@ const camelToSnake: Record<string, string> = {
   baseAddress: 'base_address',
   bitcoinAddress: 'bitcoin_address',
   solanaAddress: 'solana_address',
+  tezosAddress: 'tezos_address',
   cashAppCashtag: 'cash_app_cashtag',
   venmoUsername: 'venmo_username',
   zelleContact: 'zelle_contact',
