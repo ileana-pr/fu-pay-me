@@ -34,14 +34,14 @@
 
 html.dark {
   color-scheme: dark;
-  --piri-bg: #161311;
-  --piri-text: #faf6f0;
-  --piri-text-muted: rgba(250, 246, 240, 0.68);
-  --piri-cream: #1e1a16;
-  --piri-elevated: #221e1a;
-  --piri-surface: rgba(255, 255, 255, 0.09);
-  --piri-surface-dim: rgba(255, 255, 255, 0.06);
-  --piri-border: rgba(250, 246, 240, 0.14);
+  --piri-bg: #1a1325;
+  --piri-text: #faf6ff;
+  --piri-text-muted: rgba(250, 246, 255, 0.72);
+  --piri-cream: #241734;
+  --piri-elevated: #2a1d3c;
+  --piri-surface: rgba(167, 139, 250, 0.16);
+  --piri-surface-dim: rgba(167, 139, 250, 0.1);
+  --piri-border: rgba(250, 246, 255, 0.16);
 }
 
 @layer base {
