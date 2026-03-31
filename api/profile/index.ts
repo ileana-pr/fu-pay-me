@@ -1,13 +1,12 @@
 import { config } from 'dotenv';
 import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+import { nanoid } from 'nanoid';
+import { isValidTezosAddress } from '../lib/tezosAddress';
 
 // load .env.local from project root (cwd when you run vercel dev)
 config({ path: path.join(process.cwd(), '.env.local') });
 config({ path: path.join(process.cwd(), '.env') });
-
-import { createClient } from '@supabase/supabase-js';
-import { nanoid } from 'nanoid';
-import { isValidTezosAddress } from '../lib/tezosAddress';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
