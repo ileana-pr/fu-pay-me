@@ -119,10 +119,17 @@ export default function TezosTip({ onBack, receivingAddress }: TezosTipProps) {
             <ArrowLeft className="w-5 h-5" /> Back
           </button>
           <div className="rounded-xl border-2 border-piri/20 bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-piri">
-              Set <code className="font-mono text-xs">VITE_TEZOS_RPC_URL</code> to a mainnet https rpc (e.g.{' '}
-              https://mainnet.ecadinfra.com), redeploy, and reload.
+            <p className="text-base font-bold text-piri">Tezos payments are temporarily unavailable.</p>
+            <p className="text-sm font-semibold piri-muted mt-2">
+              Please choose another payment method for now, or try again in a little bit.
             </p>
+            <button
+              type="button"
+              onClick={onBack}
+              className="mt-4 px-4 py-2 rounded-xl border-2 border-piri text-piri font-semibold hover:bg-piri/5 transition-colors"
+            >
+              Back to payment methods
+            </button>
           </div>
         </div>
       </div>
