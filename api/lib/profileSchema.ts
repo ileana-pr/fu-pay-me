@@ -1,5 +1,4 @@
 // profile schema for api — matches frontend UserProfile
-import { isValidTezosAddress } from './tezosAddress';
 
 export interface StoredProfile {
   ethereumAddress?: string;
@@ -44,13 +43,6 @@ export function validateProfile(body: unknown): body is StoredProfile {
   ];
   for (const key of Object.keys(p)) {
     if (!allowed.includes(key) || typeof p[key] !== 'string') return false;
-  }
-  if (
-    typeof p.tezosAddress === 'string' &&
-    p.tezosAddress.trim().length > 0 &&
-    !isValidTezosAddress(p.tezosAddress)
-  ) {
-    return false;
   }
   return hasAtLeastOneMethod(p as StoredProfile);
 }

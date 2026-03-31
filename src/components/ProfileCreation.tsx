@@ -2,7 +2,12 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { logClientError, profileHttpUserMessage } from '../lib/userFacingErrors';
 import { createProfile, uploadProfileAvatar } from '../lib/profileApi';
 import { resizeProfileAvatarFile } from '../lib/resizeProfileAvatar';
-import { isValidTezosAddress } from '../lib/tezosAddress';
+import {
+  isValidBitcoinAddress,
+  isValidEvmAddress,
+  isValidSolanaAddress,
+  isValidTezosAddress,
+} from '../lib/addressFormats';
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
@@ -193,8 +198,6 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     }
   }, []);
 
-  const isValidEvmAddress = (s: string) => /^0x[a-fA-F0-9]{40}$/.test(s);
-  const isValidBitcoinAddress = (s: string) => /^(1|3)[a-zA-HJ-NP-Z0-9]{25,34}$|^bc1[a-z0-9]{39,89}$/i.test(s.trim());
   const handleSaveAddress = () => {
     const trimmed = manualAddress.trim();
     // cash app: store $cashtag without the $, lowercase (cashtags are case-insensitive)
@@ -258,6 +261,10 @@ export default function ProfileCreation({ onSave, onSignOut, connectedWalletAddr
     }
     if (editingChain === 'tezos' && !isValidTezosAddress(address)) {
       setResolveError('Please enter a valid Tezos address (tz1…, tz2…, tz3…, or KT1…).');
+      return;
+    }
+    if (editingChain === 'solana' && !isValidSolanaAddress(address)) {
+      setResolveError('Please enter a valid Solana address (base58, 32–44 chars) or resolve a .sol name first.');
       return;
     }
     setResolveError(null);

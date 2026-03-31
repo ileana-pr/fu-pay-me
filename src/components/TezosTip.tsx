@@ -5,7 +5,7 @@ import { NetworkType } from '@airgap/beacon-dapp';
 import { ArrowLeft, CheckCircle2, Loader2, AlertCircle, XCircle, Copy, Check } from 'lucide-react';
 import ChainLogo from './ChainLogo';
 import { getTezosRpcUrl } from '../lib/tezosRpc';
-import { isValidTezosAddress } from '../lib/tezosAddress';
+import { isValidTezosAddress } from '../lib/addressFormats';
 import { logClientError } from '../lib/userFacingErrors';
 
 interface TezosTipProps {

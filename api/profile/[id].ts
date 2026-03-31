@@ -1,8 +1,6 @@
 import { config } from 'dotenv';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import { isValidTezosAddress } from '../lib/tezosAddress';
-
 config({ path: path.join(process.cwd(), '.env.local') });
 config({ path: path.join(process.cwd(), '.env') });
 
@@ -46,13 +44,6 @@ function validateProfile(body: unknown): body is Record<string, unknown> {
   }
   if (typeof p.displayName === 'string' && p.displayName.length > DISPLAY_NAME_MAX) return false;
   if (typeof p.avatarUrl === 'string' && !isValidOptionalHttpsUrl(p.avatarUrl)) return false;
-  if (
-    typeof p.tezosAddress === 'string' &&
-    p.tezosAddress.trim().length > 0 &&
-    !isValidTezosAddress(p.tezosAddress)
-  ) {
-    return false;
-  }
   return hasAtLeastOneMethod(p);
 }
 
@@ -70,27 +61,12 @@ const snakeToCamel: Record<string, string> = {
   avatar_url: 'avatarUrl',
 };
 
-const PUBLIC_PROFILE_KEYS = new Set([
-  'ethereumAddress',
-  'baseAddress',
-  'bitcoinAddress',
-  'solanaAddress',
-  'tezosAddress',
-  'cashAppCashtag',
-  'venmoUsername',
-  'zelleContact',
-  'paypalUsername',
-  'displayName',
-  'avatarUrl',
-]);
-
 function toProfile(row: Record<string, unknown>): Record<string, string | undefined> {
   const profile: Record<string, string | undefined> = {};
   const skip = ['id', 'created_at', 'updated_at', 'user_id', 'owner_address', 'email'];
   for (const [k, v] of Object.entries(row)) {
     if (skip.includes(k)) continue;
-    const key = (snakeToCamel[k] ?? k) as string;
-    if (!PUBLIC_PROFILE_KEYS.has(key)) continue;
+    const key = snakeToCamel[k] ?? k;
     profile[key] = typeof v === 'string' ? v : undefined;
   }
   return profile;

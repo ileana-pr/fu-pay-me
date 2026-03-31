@@ -2,8 +2,6 @@ import { config } from 'dotenv';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
-import { isValidTezosAddress } from '../lib/tezosAddress';
-
 // load .env.local from project root (cwd when you run vercel dev)
 config({ path: path.join(process.cwd(), '.env.local') });
 config({ path: path.join(process.cwd(), '.env') });
@@ -73,13 +71,6 @@ function validateProfile(body: unknown): body is StoredProfile {
   }
   if (typeof p.displayName === 'string' && p.displayName.length > DISPLAY_NAME_MAX) return false;
   if (typeof p.avatarUrl === 'string' && !isValidOptionalHttpsUrl(p.avatarUrl)) return false;
-  if (
-    typeof p.tezosAddress === 'string' &&
-    p.tezosAddress.trim().length > 0 &&
-    !isValidTezosAddress(p.tezosAddress)
-  ) {
-    return false;
-  }
   const vals = [
     p.ethereumAddress,
     p.baseAddress,
@@ -134,21 +125,6 @@ const snakeToCamel: Record<string, string> = {
   avatar_url: 'avatarUrl',
 };
 
-// never echo arbitrary db columns (could shadow "error" or bloat payload)
-const PUBLIC_PROFILE_KEYS = new Set([
-  'ethereumAddress',
-  'baseAddress',
-  'bitcoinAddress',
-  'solanaAddress',
-  'tezosAddress',
-  'cashAppCashtag',
-  'venmoUsername',
-  'zelleContact',
-  'paypalUsername',
-  'displayName',
-  'avatarUrl',
-]);
-
 // wallet sign-in uses synthetic emails (0x...@wallet.piri) — never store in profiles.email
 const WALLET_EMAIL_DOMAIN = 'wallet.piri';
 function isWalletEmail(email: string | undefined): boolean {
@@ -159,16 +135,10 @@ function rowToProfile(row: Record<string, unknown>): Record<string, string | und
   const out: Record<string, string | undefined> = {};
   for (const [k, v] of Object.entries(row)) {
     if (k === 'id' || k === 'created_at' || k === 'user_id' || k === 'owner_address' || k === 'email') continue;
-    const key = (snakeToCamel[k] ?? k) as string;
-    if (!PUBLIC_PROFILE_KEYS.has(key)) continue;
+    const key = snakeToCamel[k] ?? k;
     out[key] = typeof v === 'string' ? v : undefined;
   }
   return out;
-}
-
-function profileJson(row: Record<string, unknown>): Record<string, unknown> {
-  const id = row.id;
-  return { id: id != null ? String(id) : '', ...rowToProfile(row) };
 }
 
 /** GET /api/profile — fetch by ?address=0x... OR by Authorization: Bearer <token> (user_id) */
@@ -226,7 +196,8 @@ export async function GET(request: Request) {
               );
             }
           }
-          return Response.json(profileJson(existing));
+          const profile = rowToProfile(existing);
+          return Response.json({ id: existing.id, ...profile });
         }
       }
       query = query.eq('user_id', user.id);
@@ -255,7 +226,8 @@ export async function GET(request: Request) {
       return Response.json({ error: 'Profile not found' }, { status: 404 });
     }
     const row = data as Record<string, unknown>;
-    return Response.json(profileJson(row));
+    const profile = rowToProfile(row);
+    return Response.json({ id: row.id, ...profile });
   } catch (e) {
     console.error('GET /api/profile fatal:', e);
     return Response.json(
