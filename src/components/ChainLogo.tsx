@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 
 /**
- * Chain logos: chain jpg → chain png → /logo/piri.png → letter badge.
- * Ethereum uses eth.jpg.
+ * Chain logos: chain png → chain jpg → /logo/piri.png → letter badge.
+ * png is preferred because it preserves transparent backgrounds.
  */
 type ChainId = 'ethereum' | 'base' | 'bitcoin' | 'solana' | 'tezos' | 'cashapp' | 'venmo' | 'zelle' | 'paypal';
 
@@ -22,8 +22,25 @@ const FALLBACK_LETTER: Record<ChainId, string> = {
 };
 
 function logoCandidates(chain: ChainId): string[] {
-  const jpgBase = chain === 'ethereum' ? 'eth' : chain;
-  return [`${LOGO_DIR}/${jpgBase}.jpg`, `${LOGO_DIR}/${chain}.png`, SHARED_PLACEHOLDER];
+  const aliases: Record<ChainId, string[]> = {
+    ethereum: ['ethereum', 'eth'],
+    base: ['base'],
+    bitcoin: ['bitcoin', 'btc'],
+    solana: ['solana', 'sol'],
+    tezos: ['tezos', 'xtz'],
+    cashapp: ['cashapp', 'cash-app'],
+    venmo: ['venmo'],
+    zelle: ['zelle'],
+    paypal: ['paypal'],
+  };
+
+  const candidates = aliases[chain].flatMap((name) => [
+    `${LOGO_DIR}/${name}.svg`,
+    `${LOGO_DIR}/${name}.png`,
+    `${LOGO_DIR}/${name}.jpg`,
+  ]);
+
+  return [...candidates, SHARED_PLACEHOLDER];
 }
 
 interface ChainLogoProps {

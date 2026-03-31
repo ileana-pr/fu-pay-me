@@ -518,7 +518,7 @@ export default function BaseTip({ onBack, receivingAddress }: BaseTipProps) {
                         key={amt}
                         onClick={() => { setAmount(amt); setError(null); setTransactionCancelled(false); }}
                         disabled={isSending || isConfirming}
-                        className="py-2 px-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 border-2 bg-piri-base/8 border-piri-base/25 hover:bg-piri-base/15 text-[#2D0A00]"
+                        className="py-2 px-3 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 border-2 bg-white border-piri-base/45 hover:bg-piri-base/10 text-[#2D0A00] shadow-sm"
                       >
                         {amt}
                       </button>

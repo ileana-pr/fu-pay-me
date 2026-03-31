@@ -111,6 +111,11 @@ export default function TezosTip({ onBack, receivingAddress }: TezosTipProps) {
 
   const explorerUrl = opHash ? `https://tzkt.io/${opHash}` : null;
   const quickAmounts = ['0.1', '0.5', '1', '5', '10'];
+  const handleStartOver = () => {
+    setAmount('');
+    setError(null);
+    setTxCancelled(false);
+  };
 
   if (!rpc) {
     return (
@@ -275,9 +280,36 @@ export default function TezosTip({ onBack, receivingAddress }: TezosTipProps) {
             )}
 
             {txCancelled && (
-              <div className="flex gap-3 p-4 rounded-xl border-2 border-amber-400 bg-amber-50">
-                <XCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-sm text-amber-900">Cancelled in wallet — your funds are safe. Try again when ready.</p>
+              <div className="flex flex-col gap-4 p-6 rounded-2xl border-2 bg-amber-100 border-amber-400 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <XCircle className="w-6 h-6 flex-shrink-0 mt-0.5" style={{ color: 'var(--piri-ethereum)' }} aria-hidden />
+                  <div>
+                    <p className="font-black text-lg leading-tight" style={{ color: 'var(--piri-ethereum)', fontFamily: 'var(--piri-font-display)' }}>
+                      Transaction cancelled
+                    </p>
+                    <p className="text-sm font-semibold mt-2 leading-relaxed" style={{ color: 'var(--piri-ethereum)' }}>
+                      No worries — your funds are safe. You can try again whenever you&apos;re ready.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={handleStartOver}
+                    className="px-4 py-2 text-white font-bold rounded-xl hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: 'var(--piri-base)' }}
+                  >
+                    Start over
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onBack}
+                    className="px-4 py-2 rounded-xl font-bold border-2 transition-colors bg-piri-surface hover:bg-piri-elevated"
+                    style={{ borderColor: 'var(--piri-ethereum)', color: 'var(--piri-ethereum)' }}
+                  >
+                    Go back
+                  </button>
+                </div>
               </div>
             )}
             {error && (
